@@ -113,6 +113,7 @@
             {% set print_item_id = row.document_id if row.document_id else row.id %}
             {% set print_url = url_for('print_document', doc_type=print_doc_type, item_id=print_item_id) %}
             <tr class="context-target"
+                data-sort-sequence="{{ row.sort_sequence or row.id }}"
                 data-delete-label="{% if row.tx_kind == 'purchase' %}cet achat{% elif row.tx_kind in ['sale_finished','sale_raw'] %}cette vente{% else %}cette transaction{% endif %}"
                 data-print-url="{{ print_url }}"
                 data-edit-url="{% if row.tx_kind == 'purchase' %}{{ url_for('edit_purchase_document', document_id=row.document_id) if row.document_id else url_for('edit_purchase', purchase_id=row.id) }}{% elif row.tx_kind == 'sale_finished' %}{{ url_for('edit_sale_document', document_id=row.document_id) if row.document_id else url_for('edit_sale', kind='finished', row_id=row.id) }}{% elif row.tx_kind == 'sale_raw' %}{{ url_for('edit_sale_document', document_id=row.document_id) if row.document_id else url_for('edit_sale', kind='raw', row_id=row.id) }}{% elif row.tx_kind == 'payment' %}{{ url_for('edit_payment', payment_id=row.id) }}{% endif %}"

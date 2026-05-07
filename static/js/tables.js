@@ -80,10 +80,16 @@
     const value=Number(token);
     return isNaN(value)?null:value;
   }
-  function parseCell(text,kind){
+  function parseCell(cell,kind){
+    const text=cell?(cell.getAttribute('data-sort-value')||cell.textContent):'';
     if(kind==='date') return parseDate(text);
     if(kind==='number') return parseNumber(text);
     return normalizeText(text);
+  }
+  function rowSortSequence(row){
+    if(!row || row.dataset.sortSequence===undefined) return null;
+    const value=Number(row.dataset.sortSequence);
+    return isNaN(value)?null:value;
   }
   function compareValues(left,right,kind,direction){
     const leftMissing=left===null || left===undefined || left==='';
@@ -160,10 +166,17 @@
         th.dataset.sortDir=next;
         th.setAttribute('aria-sort',next==='asc'?'ascending':'descending');
         currentRows.sort(function(a,b){
-          const av=parseCell(a.cells[index]?a.cells[index].textContent:'',kind);
-          const bv=parseCell(b.cells[index]?b.cells[index].textContent:'',kind);
+          const av=parseCell(a.cells[index],kind);
+          const bv=parseCell(b.cells[index],kind);
           const cmp=compareValues(av,bv,kind,next);
           if(cmp) return cmp;
+          if(kind==='date'){
+            const aSequence=rowSortSequence(a);
+            const bSequence=rowSortSequence(b);
+            if(aSequence!==null && bSequence!==null && aSequence!==bSequence){
+              return next==='asc'?aSequence-bSequence:bSequence-aSequence;
+            }
+          }
           return Number(a.dataset.originalIndex||0)-Number(b.dataset.originalIndex||0);
         });
         currentRows.forEach(function(row){tbody.appendChild(row);});

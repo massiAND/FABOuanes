@@ -6,13 +6,14 @@
     sand:'#7c5a34'
   };
   const fonts={
-    google:true,
-    microsoft:true,
-    apple:true,
-    ubuntu:true,
+    jakarta:true,
     arial:true,
     calibri:true,
     system:true
+  };
+  const navLayouts={
+    horizontal:true,
+    vertical:true
   };
   function markSelected(selector,key,value){
     document.querySelectorAll(selector).forEach(function(button){
@@ -39,6 +40,11 @@
     document.documentElement.setAttribute('data-font',name);
     markSelected('.js-font','font',name);
   }
+  function applyNavLayout(layout){
+    const name=navLayouts[layout]?layout:'horizontal';
+    document.documentElement.setAttribute('data-nav',name);
+    markSelected('.js-nav-layout','navLayout',name);
+  }
   try{
     const params=new URLSearchParams(window.location.search);
     if(params.get('mobile_shell')==='1') localStorage.setItem('fab_mobile_shell','1');
@@ -46,6 +52,7 @@
   }catch(e){}
   applyTheme(localStorage.getItem('fab_theme')||'light');
   applyFont(localStorage.getItem('fab_font')||'system');
+  applyNavLayout(localStorage.getItem('fab_nav_layout')||'horizontal');
   document.querySelectorAll('.js-theme').forEach(function(button){
     button.addEventListener('click',function(){
       const theme=this.dataset.theme;
@@ -58,6 +65,13 @@
       const font=this.dataset.font;
       applyFont(font);
       localStorage.setItem('fab_font',font);
+    });
+  });
+  document.querySelectorAll('.js-nav-layout').forEach(function(button){
+    button.addEventListener('click',function(){
+      const layout=this.dataset.navLayout;
+      applyNavLayout(layout);
+      localStorage.setItem('fab_nav_layout',layout);
     });
   });
 })();

@@ -44,23 +44,23 @@ def _build_client_detail_context(client_id: int):
         return None
     events = query_db(
         """
-        SELECT row_id, document_id, event_date, designation, item_name, quantity, unit, purchase_amount, payment_amount, event_type
+        SELECT row_id, document_id, sort_sequence, event_date, designation, item_name, quantity, unit, purchase_amount, payment_amount, event_type
         FROM (
-            SELECT s.id AS row_id, s.document_id AS document_id, s.sale_date AS event_date,
+            SELECT s.id AS row_id, s.document_id AS document_id, COALESCE(s.document_id, s.id) AS sort_sequence, s.sale_date AS event_date,
                    NULL AS designation, f.name AS item_name, s.quantity AS quantity, s.unit AS unit,
                    s.total AS purchase_amount, 0.0 AS payment_amount, 'sale_finished' AS event_type
             FROM sales s
             JOIN finished_products f ON f.id = s.finished_product_id
             WHERE s.client_id = ?
             UNION ALL
-            SELECT rs.id AS row_id, rs.document_id AS document_id, rs.sale_date AS event_date,
+            SELECT rs.id AS row_id, rs.document_id AS document_id, COALESCE(rs.document_id, rs.id) AS sort_sequence, rs.sale_date AS event_date,
                    NULL AS designation, COALESCE(NULLIF(rs.custom_item_name, ''), r.name) AS item_name, rs.quantity AS quantity, rs.unit AS unit,
                    rs.total AS purchase_amount, 0.0 AS payment_amount, 'sale_raw' AS event_type
             FROM raw_sales rs
             JOIN raw_materials r ON r.id = rs.raw_material_id
             WHERE rs.client_id = ?
             UNION ALL
-            SELECT p.id AS row_id, NULL AS document_id, p.payment_date AS event_date,
+            SELECT p.id AS row_id, NULL AS document_id, p.id AS sort_sequence, p.payment_date AS event_date,
                    CASE
                        WHEN p.sale_kind = 'raw' THEN 'Versement lie a vente matière'
                        WHEN p.sale_kind = 'finished' THEN 'Versement lie a vente produit'
@@ -85,6 +85,7 @@ def _build_client_detail_context(client_id: int):
             {
                 "row_id": None,
                 "document_id": None,
+                "sort_sequence": 0,
                 "event_date": client["created_at"][:10],
                 "designation": "Credit initial (reprise Excel)",
                 "purchase_amount": float(client["opening_credit"]),
@@ -98,7 +99,7 @@ def _build_client_detail_context(client_id: int):
             suffix = " (matière première)" if item["event_type"] == "sale_raw" else ""
             item["designation"] = f"{item['item_name']}{suffix} - {_format_quantity(item['quantity'])} {item['unit'] or ''}".strip()
         timeline.append(item)
-    timeline.sort(key=lambda item: (item["event_date"], 0 if item["event_type"] in ("opening", "sale_finished", "sale_raw") else 1))
+    timeline.sort(key=lambda item: (item["event_date"], 0 if item["event_type"] in ("opening", "sale_finished", "sale_raw") else 1, int(item.get("sort_sequence") or 0)))
     running = 0.0
     for item in timeline:
         running += float(item.get("purchase_amount", 0) or 0)

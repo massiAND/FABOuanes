@@ -22,7 +22,7 @@
   <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"></noscript>
   <link href="{{ url_for('static', filename='css/tokens.css', v='20260501-black-actions') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/components.css', v='20260501-black-actions') }}" rel="stylesheet">
-  <link href="{{ url_for('static', filename='app.css', v='20260501-black-actions') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='app.css', v='20260508-nav-font-fix') }}" rel="stylesheet">
 </head>
 {% set is_print_view = request.path.startswith('/print/') or request.endpoint in ['print_client_history'] %}
 <body class="{% if is_desktop_app %}desktop-app {% endif %}{% if is_print_view %}print-route{% endif %}">
@@ -85,13 +85,14 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
           <li><button class="dropdown-item js-theme" type="button" data-theme="sand"><i class="bi bi-brightness-alt-high"></i>Sable</button></li>
           <li><hr class="dropdown-divider"></li>
           <li><div class="dropdown-header" style="font-size:.7rem;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.08em;">Polices</div></li>
-          <li><button class="dropdown-item js-font" type="button" data-font="google"><i class="bi bi-type"></i>Google font</button></li>
-          <li><button class="dropdown-item js-font" type="button" data-font="microsoft"><i class="bi bi-type"></i>Microsoft font</button></li>
-          <li><button class="dropdown-item js-font" type="button" data-font="apple"><i class="bi bi-type"></i>Apple font</button></li>
-          <li><button class="dropdown-item js-font" type="button" data-font="ubuntu"><i class="bi bi-type"></i>Ubuntu font</button></li>
+          <li><button class="dropdown-item js-font" type="button" data-font="jakarta"><i class="bi bi-type"></i>Plus Jakarta</button></li>
           <li><button class="dropdown-item js-font" type="button" data-font="arial"><i class="bi bi-type"></i>Arial</button></li>
           <li><button class="dropdown-item js-font" type="button" data-font="calibri"><i class="bi bi-type"></i>Calibri</button></li>
-          <li><button class="dropdown-item js-font" type="button" data-font="system"><i class="bi bi-type"></i>Système</button></li>
+          <li><button class="dropdown-item js-font" type="button" data-font="system"><i class="bi bi-type"></i>Systeme</button></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><div class="dropdown-header" style="font-size:.7rem;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.08em;">Navigation</div></li>
+          <li><button class="dropdown-item js-nav-layout" type="button" data-nav-layout="horizontal"><i class="bi bi-layout-text-window"></i>Barre horizontale</button></li>
+          <li><button class="dropdown-item js-nav-layout" type="button" data-nav-layout="vertical"><i class="bi bi-layout-sidebar"></i>Barre verticale</button></li>
         </ul>
       </div>
       <!-- User -->
@@ -178,13 +179,15 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
     </div>
     <div class="drawer-sub">Police</div>
     <div class="drawer-font-grid">
-      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="google"><i class="bi bi-type"></i>Google</button>
-      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="microsoft"><i class="bi bi-type"></i>Microsoft</button>
-      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="apple"><i class="bi bi-type"></i>Apple</button>
-      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="ubuntu"><i class="bi bi-type"></i>Ubuntu</button>
+      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="jakarta"><i class="bi bi-type"></i>Jakarta</button>
       <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="arial"><i class="bi bi-type"></i>Arial</button>
       <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="calibri"><i class="bi bi-type"></i>Calibri</button>
-      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="system"><i class="bi bi-type"></i>Système</button>
+      <button class="btn btn-sm btn-outline-secondary js-font" type="button" data-font="system"><i class="bi bi-type"></i>Systeme</button>
+    </div>
+    <div class="drawer-sub">Navigation</div>
+    <div class="drawer-font-grid">
+      <button class="btn btn-sm btn-outline-secondary js-nav-layout" type="button" data-nav-layout="horizontal"><i class="bi bi-layout-text-window"></i>Horizontale</button>
+      <button class="btn btn-sm btn-outline-secondary js-nav-layout" type="button" data-nav-layout="vertical"><i class="bi bi-layout-sidebar"></i>Verticale</button>
     </div>
     <div class="drawer-divider"></div>
     {% if g.user.role == 'admin' %}
@@ -264,9 +267,9 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/api.js', v='20260501-black-actions') }}"></script>
 <script src="{{ url_for('static', filename='js/forms.js', v='20260501-black-actions') }}"></script>
-<script src="{{ url_for('static', filename='js/theme.js', v='20260501-black-actions') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js', v='20260508-nav-font-fix') }}"></script>
 <script src="{{ url_for('static', filename='js/layout.js', v='20260501-black-actions') }}"></script>
-<script src="{{ url_for('static', filename='js/tables.js', v='20260508-sort-fix') }}"></script>
+<script src="{{ url_for('static', filename='js/tables.js', v='20260508-sort-tie-fix') }}"></script>
 <script src="{{ url_for('static', filename='js/notifications.js', v='20260501-black-actions') }}"></script>
 <script src="{{ url_for('static', filename='app.js', v='20260501-black-actions') }}"></script>
 {% block scripts %}{% endblock %}

@@ -4,7 +4,7 @@ from __future__ import annotations
 def test_login_page_renders(client):
     response = client.get("/login")
     assert response.status_code == 200
-    assert "Connexion" in response.text
+    assert "Se connecter" in response.text
 
 
 def test_login_redirects_after_success(client):

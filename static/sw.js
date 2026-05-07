@@ -1,4 +1,4 @@
-const VERSION = "fabouanes-v26-black-actions";
+const VERSION = "fabouanes-v28-nav-fonts";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const OFFLINE_URL = "/static/offline.html";

@@ -5,6 +5,7 @@ def test_client_history_print_renders(logged_client, first_client_id):
     response = logged_client.get(f"/contacts/clients/{first_client_id}/print-history")
     assert response.status_code == 200
     assert "Historique client" in response.text
+    assert "@media screen and (max-width:767px)" in response.text
 
 
 def test_purchase_print_page_renders(logged_client, first_purchase_id):

@@ -44,10 +44,10 @@ def _order_clause(sort_key: str, direction: str) -> str:
     }
     if sort_key in numeric_columns:
         column = numeric_columns[sort_key]
-        return f"ORDER BY CASE WHEN {column} IS NULL THEN 1 ELSE 0 END ASC, {column} {direction_sql}, tx_date DESC, id DESC"
+        return f"ORDER BY CASE WHEN {column} IS NULL THEN 1 ELSE 0 END ASC, {column} {direction_sql}, tx_date DESC, sort_sequence DESC, row_sort_key DESC"
     if sort_key in text_columns:
-        return f"ORDER BY {text_columns[sort_key]} {direction_sql}, tx_date DESC, id DESC"
-    return f"ORDER BY tx_date {direction_sql}, id {direction_sql}"
+        return f"ORDER BY {text_columns[sort_key]} {direction_sql}, tx_date DESC, sort_sequence DESC, row_sort_key DESC"
+    return f"ORDER BY tx_date {direction_sql}, sort_sequence {direction_sql}, row_sort_key {direction_sql}"
 
 
 def _sort_url(args, sort_key: str, current_sort: str, current_direction: str) -> str:
@@ -71,7 +71,7 @@ def _sort_url(args, sort_key: str, current_sort: str, current_direction: str) ->
 def list_transactions_context(args=None) -> dict:
     args = args or {}
     page, page_size, offset = parse_pagination(args)
-    cursor = decode_cursor(str(args.get("cursor", "") or ""), 2)
+    cursor = decode_cursor(str(args.get("cursor", "") or ""), 3)
     filter_type = str(args.get("type", "all") or "all").strip().lower()
     filter_name = str(args.get("name", "") or "").strip()
     filter_date = str(args.get("date", "") or "").strip()
@@ -99,7 +99,8 @@ def list_transactions_context(args=None) -> dict:
 
     query = """
         SELECT * FROM (
-            SELECT 'Achat' AS tx_type, 'purchase' AS tx_kind, p.id, 'purchase:' || p.id AS row_sort_key, p.purchase_date AS tx_date,
+            SELECT 'Achat' AS tx_type, 'purchase' AS tx_kind, p.id, 'purchase:' || p.id AS row_sort_key,
+                   COALESCE(p.document_id, p.id) AS sort_sequence, p.purchase_date AS tx_date,
                    COALESCE(s.name, '-') AS partner_name, COALESCE(NULLIF(p.custom_item_name, ''), r.name) AS designation,
                    CASE
                        WHEN lower(COALESCE(p.unit, r.unit, 'kg')) = 'sac' THEN p.quantity / 50.0
@@ -119,7 +120,7 @@ def list_transactions_context(args=None) -> dict:
             UNION ALL
             SELECT 'Vente' AS tx_type,
                    CASE WHEN x.row_kind = 'finished' THEN 'sale_finished' ELSE 'sale_raw' END AS tx_kind,
-                   x.id, x.row_sort_key, x.sale_date AS tx_date, COALESCE(x.client_name, '-') AS partner_name, x.item_name AS designation,
+                   x.id, x.row_sort_key, COALESCE(x.document_id, x.id) AS sort_sequence, x.sale_date AS tx_date, COALESCE(x.client_name, '-') AS partner_name, x.item_name AS designation,
                    x.quantity, x.unit, x.unit_price, x.total, x.amount_paid AS paid, x.balance_due AS due, x.document_id AS document_id
             FROM (
                 SELECT s.id, s.document_id, 'finished' AS row_kind, 'sale_finished:' || s.id AS row_sort_key, s.sale_date, c.name AS client_name, f.name AS item_name, s.quantity, s.unit, s.unit_price, s.total, s.amount_paid, s.balance_due
@@ -134,7 +135,7 @@ def list_transactions_context(args=None) -> dict:
             ) x
             UNION ALL
             SELECT CASE WHEN p.payment_type = 'avance' THEN 'Avance' ELSE 'Versement' END AS tx_type, 'payment' AS tx_kind,
-                   p.id, 'payment:' || p.id AS row_sort_key, p.payment_date AS tx_date, c.name AS partner_name,
+                   p.id, 'payment:' || p.id AS row_sort_key, p.id AS sort_sequence, p.payment_date AS tx_date, c.name AS partner_name,
                    CASE
                        WHEN p.sale_kind = 'finished' AND p.sale_id IS NOT NULL THEN 'Versement vente #' || p.sale_id
                        WHEN p.sale_kind = 'raw' AND p.raw_sale_id IS NOT NULL THEN 'Versement vente matière #' || p.raw_sale_id
@@ -156,18 +157,26 @@ def list_transactions_context(args=None) -> dict:
         if cursor:
             comparator = ">" if sort_direction == "asc" else "<"
             cursor_where = " AND " if where else " WHERE "
-            cursor_where += f"(tx_date {comparator} ? OR (tx_date = ? AND row_sort_key {comparator} ?))"
-            cursor_params.extend([cursor[0], cursor[0], cursor[1]])
+            try:
+                cursor_sequence = int(float(cursor[1]))
+            except (TypeError, ValueError):
+                cursor_sequence = 0
+            cursor_where += (
+                f"(tx_date {comparator} ? OR "
+                f"(tx_date = ? AND (sort_sequence {comparator} ? OR "
+                f"(sort_sequence = ? AND row_sort_key {comparator} ?))))"
+            )
+            cursor_params.extend([cursor[0], cursor[0], cursor_sequence, cursor_sequence, cursor[2]])
         direction_sql = "ASC" if sort_direction == "asc" else "DESC"
         rows_plus = query_db(
-            f"{query}{cursor_where} ORDER BY tx_date {direction_sql}, row_sort_key {direction_sql} LIMIT ?",
+            f"{query}{cursor_where} ORDER BY tx_date {direction_sql}, sort_sequence {direction_sql}, row_sort_key {direction_sql} LIMIT ?",
             tuple(params + cursor_params + [page_size + 1]),
         )
         has_next = len(rows_plus) > page_size
         rows = rows_plus[:page_size]
         if has_next and rows:
             last = rows[-1]
-            next_cursor = encode_cursor(last["tx_date"], last["row_sort_key"])
+            next_cursor = encode_cursor(last["tx_date"], last["sort_sequence"], last["row_sort_key"])
         pagination = keyset_pagination_context(
             "operations",
             args,

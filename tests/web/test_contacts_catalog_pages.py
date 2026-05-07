@@ -5,6 +5,9 @@ def test_contacts_page_renders(logged_client):
     response = logged_client.get("/contacts")
     assert response.status_code == 200
     assert "Client" in response.text or "Fournisseur" in response.text
+    assert 'data-font="jakarta"' in response.text
+    assert 'data-font="google"' not in response.text
+    assert 'data-nav-layout="vertical"' in response.text
 
 
 def test_suppliers_page_renders(logged_client):
