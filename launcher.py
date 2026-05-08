@@ -171,9 +171,15 @@ def run_server(host: str, port: int) -> None:
 
     ensure_desktop_paths()
     ensure_runtime_dirs()
+    server_mode = bool(LAUNCH_ARGS & SERVER_MODE_ARGS)
+    if server_mode:
+        print("Initialisation de la base de donnees...", flush=True)
     bootstrap_and_migrate()
     log_server_start()
-    config = uvicorn.Config("app.main:app", host=host, port=port, reload=False, log_level="warning", access_log=False)
+    if server_mode:
+        print("Base OK. Le serveur reste ouvert dans cette fenetre; Ctrl+C pour l'arreter.", flush=True)
+    log_level = os.environ.get("FAB_UVICORN_LOG_LEVEL") or ("info" if server_mode else "warning")
+    config = uvicorn.Config("app.main:app", host=host, port=port, reload=False, log_level=log_level, access_log=False)
     server = uvicorn.Server(config)
     server.run()
 
@@ -356,10 +362,10 @@ def main() -> None:
         lan_ip = get_local_ip() if host == "0.0.0.0" else host
         if host == "0.0.0.0":
             os.environ["FAB_LAN_IP"] = lan_ip
-        print(f"{APP_NAME} demarre en mode serveur reseau.")
-        print(f"Dossier de donnees: {DATA_DIR}")
-        print(f"Acces local : http://127.0.0.1:{port}")
-        print(f"Acces reseau : http://{lan_ip}:{port}")
+        print(f"{APP_NAME} demarre en mode serveur reseau.", flush=True)
+        print(f"Dossier de donnees: {DATA_DIR}", flush=True)
+        print(f"Acces local : http://127.0.0.1:{port}", flush=True)
+        print(f"Acces reseau : http://{lan_ip}:{port}", flush=True)
         run_server(host, port)
         return
 

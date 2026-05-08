@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
+from threading import RLock
 
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
@@ -18,6 +19,8 @@ def create_sqlalchemy_engine() -> Engine:
 
 
 engine = create_sqlalchemy_engine()
+_BOOTSTRAP_LOCK = RLock()
+_BOOTSTRAPPED = False
 
 
 def create_request_connection():
@@ -62,9 +65,14 @@ def run_alembic_upgrade() -> None:
 
 
 def bootstrap_and_migrate() -> None:
-    ensure_runtime_dirs()
-    bootstrap_schema()
-    run_alembic_upgrade()
+    global _BOOTSTRAPPED
+    with _BOOTSTRAP_LOCK:
+        if _BOOTSTRAPPED:
+            return
+        ensure_runtime_dirs()
+        bootstrap_schema()
+        run_alembic_upgrade()
+        _BOOTSTRAPPED = True
 
 
 def healthcheck() -> bool:

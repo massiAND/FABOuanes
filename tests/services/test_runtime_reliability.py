@@ -59,3 +59,25 @@ def test_cache_generation_invalidates_cached_value():
 
 def test_pool_status_reports_sqlite_in_sqlite_mode():
     assert postgres_pool_status()["engine"] == "sqlite"
+
+
+def test_bootstrap_and_migrate_runs_once_per_process(monkeypatch):
+    import app.core.database as database
+
+    calls = {"schema": 0, "alembic": 0}
+
+    def fake_schema():
+        calls["schema"] += 1
+
+    def fake_alembic():
+        calls["alembic"] += 1
+
+    monkeypatch.setattr(database, "_BOOTSTRAPPED", False)
+    monkeypatch.setattr(database, "ensure_runtime_dirs", lambda: None)
+    monkeypatch.setattr(database, "bootstrap_schema", fake_schema)
+    monkeypatch.setattr(database, "run_alembic_upgrade", fake_alembic)
+
+    database.bootstrap_and_migrate()
+    database.bootstrap_and_migrate()
+
+    assert calls == {"schema": 1, "alembic": 1}
