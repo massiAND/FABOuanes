@@ -155,11 +155,19 @@ Le lanceur:
 
 - prepare les dossiers runtime,
 - initialise/migre la base PostgreSQL par defaut,
-- demarre Uvicorn en mode reseau,
+- demarre Uvicorn en mode reseau sur `0.0.0.0`,
 - ouvre l'UI dans WebView,
 - conserve la compatibilite avec le QR mobile.
 
-Le client desktop reste disponible avec `python launcher.py`; il ouvre la WebView locale mais garde l'acces reseau actif.
+Le client desktop reste disponible avec `python launcher.py`; il ouvre la WebView locale mais garde l'acces reseau actif. Les autres machines du meme reseau utilisent l'adresse affichee au lancement, par exemple `http://192.168.1.32:5000`.
+
+Garder la fenetre FABOuanes ouverte sur la machine serveur pour laisser les autres machines connectees. Si une machine cliente ne se connecte pas, autoriser Python/FABOuanes dans le pare-feu Windows sur le reseau prive.
+
+SQLite est seulement un fallback explicite:
+
+```powershell
+python launcher.py --sqlite-fallback
+```
 
 ## Espace bons
 

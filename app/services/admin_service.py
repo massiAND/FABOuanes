@@ -4,13 +4,16 @@ from werkzeug.security import generate_password_hash
 
 from app.core.activity import log_activity
 from app.core.audit import audit_event, list_audit_logs
+from app.core.config import APP_DATA_DIR, DEFAULT_ADMIN_USERNAME
 from app.core.db_access import query_db
 from app.core.perf_cache import cached_result
+from app.core.security import validate_password_strength
 from app.core.storage import backup_database, list_restore_backups, mark_backup_needed, resolve_backup_path, restore_database_from
 from app.repositories.user_repository import (
     create_user,
     get_user_by_id,
     list_users,
+    update_password,
     update_user_role_and_status,
     user_exists,
 )
@@ -46,20 +49,37 @@ def create_user_account(username: str, password: str, role: str):
     return {"ok": True, "message": "Compte cree avec succes."}
 
 
-def update_user_account(user_id: int, role: str, is_active: bool):
+def update_user_account(user_id: int, role: str, is_active: bool, new_password: str = ""):
     user = get_user_by_id(user_id)
     if not user:
         return {"ok": False, "message": "Utilisateur introuvable."}
+    password = str(new_password or "").strip()
+    password_changed = bool(password)
+    if password_changed:
+        ok, password_msg = validate_password_strength(password)
+        if not ok:
+            return {"ok": False, "message": password_msg}
     before = dict(user)
     update_user_role_and_status(user_id, role, int(bool(is_active)))
+    if password_changed:
+        update_password(user_id, generate_password_hash(password), 0)
+        if str(user["username"]) == DEFAULT_ADMIN_USERNAME:
+            try:
+                (APP_DATA_DIR / "first_admin_password.txt").unlink(missing_ok=True)
+            except Exception:
+                pass
     updated = get_user_by_id(user_id)
-    log_activity("update_user", "user", user_id, f"Role={updated['role']} actif={updated['is_active']}")
+    detail = f"Role={updated['role']} actif={updated['is_active']}"
+    if password_changed:
+        detail += " mot_de_passe=modifie"
+    log_activity("update_user", "user", user_id, detail)
     audit_event("update_user", "user", user_id, before=before, after=updated)
     try:
-        mark_backup_needed("update_user")
+        mark_backup_needed("update_user_password" if password_changed else "update_user")
     except Exception:
         pass
-    return {"ok": True, "message": "Compte mis a jour."}
+    message = "Compte et mot de passe mis a jour." if password_changed else "Compte mis a jour."
+    return {"ok": True, "message": message}
 
 
 def save_backup_settings_from_form(form_data: dict[str, str]):

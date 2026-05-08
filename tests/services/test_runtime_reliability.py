@@ -24,6 +24,25 @@ def _run_config_probe(env_updates: dict[str, str]) -> subprocess.CompletedProces
     )
 
 
+def _run_launcher_probe(args: list[str] | None = None) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["FAB_DESKTOP"] = "0"
+    env.pop("FAB_HOST", None)
+    code = (
+        f"import os, sys; sys.argv = ['launcher.py'] + {args or []!r}; "
+        "import runpy; ns = runpy.run_path('launcher.py'); "
+        "print(os.environ.get('FAB_DESKTOP')); print(ns['get_bind_host']())"
+    )
+    return subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=os.getcwd(),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+
+
 def test_server_mode_requires_database_url():
     result = _run_config_probe({"DATABASE_URL": "", "FAB_DESKTOP": "0"})
     assert result.returncode != 0
@@ -34,6 +53,18 @@ def test_desktop_mode_allows_sqlite_fallback():
     result = _run_config_probe({"DATABASE_URL": "", "FAB_DESKTOP": "1"})
     assert result.returncode == 0
     assert "sqlite:///" in result.stdout
+
+
+def test_launcher_defaults_to_network_server_mode():
+    result = _run_launcher_probe()
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["0", "0.0.0.0"]
+
+
+def test_launcher_sqlite_fallback_must_be_explicit():
+    result = _run_launcher_probe(["--sqlite-fallback"])
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["1", "0.0.0.0"]
 
 
 def test_multi_worker_runtime_is_rejected_without_override(monkeypatch):

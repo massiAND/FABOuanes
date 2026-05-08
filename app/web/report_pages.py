@@ -91,6 +91,7 @@ async def pdf_reader(request: Request):
         selected_key = f"pdf:{legacy_file}"
     documents = list_bon_space_documents(q=q, kind=kind)
     selected = find_bon_space_document(documents, selected_key)
+    missing_doc_key = selected_key if selected_key and selected is None else ""
     return templates.TemplateResponse(
         "pdf_reader.html",
         template_context(
@@ -98,6 +99,7 @@ async def pdf_reader(request: Request):
             files=list_pdf_reader_files(),
             documents=documents,
             selected_doc=selected,
+            missing_doc_key=missing_doc_key,
             filters={"q": q, "kind": kind},
         ),
     )

@@ -6,6 +6,8 @@ set "PROJECT_ROOT=%~dp0..\.."
 set "EXE_BUILDER=%~dp0COMPILER_EXE_AVEC_TESTS.bat"
 set "ISS_FILE=%~dp0FABOuanes_Setup.iss"
 set "ISCC_CMD="
+set "OUTPUT_BASE=FABOuanes_Setup"
+set "OUTPUT_EXE=installer_output\%OUTPUT_BASE%.exe"
 set "CALLER_NO_PAUSE=%FAB_NO_PAUSE%"
 set "FAB_NO_PAUSE=1"
 
@@ -49,10 +51,20 @@ if not defined ISCC_CMD (
 )
 
 if not exist "installer_output" mkdir "installer_output" >nul 2>&1
+if exist "%OUTPUT_EXE%" (
+    del /f /q "%OUTPUT_EXE%" >nul 2>&1
+    if exist "%OUTPUT_EXE%" (
+        for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "BUILD_STAMP=%%I"
+        if not defined BUILD_STAMP set "BUILD_STAMP=%RANDOM%"
+        set "OUTPUT_BASE=FABOuanes_Setup_%BUILD_STAMP%"
+        set "OUTPUT_EXE=installer_output\%OUTPUT_BASE%.exe"
+        echo  Info: l'ancien installateur est ouvert. Nouveau fichier: %OUTPUT_EXE%
+    )
+)
 
 echo.
 echo  Compilation de l'installateur avec Inno Setup...
-"%ISCC_CMD%" "%ISS_FILE%"
+"%ISCC_CMD%" /F"%OUTPUT_BASE%" "%ISS_FILE%"
 if errorlevel 1 (
     echo.
     echo  ERREUR: la creation de l'installateur a echoue.
@@ -60,16 +72,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if not exist "installer_output\FABOuanes_Setup.exe" (
+if not exist "%OUTPUT_EXE%" (
     echo.
-    echo  ERREUR: installer_output\FABOuanes_Setup.exe introuvable.
+    echo  ERREUR: %OUTPUT_EXE% introuvable.
     if not defined CALLER_NO_PAUSE pause
     exit /b 1
 )
 
 echo.
 echo  ==========================================
-echo   SUCCES !  installer_output\FABOuanes_Setup.exe
+echo   SUCCES !  %OUTPUT_EXE%
 echo  ==========================================
 echo.
 if not defined CALLER_NO_PAUSE pause

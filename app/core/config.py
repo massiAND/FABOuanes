@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 
 APP_NAME = "FABOuanes"
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(os.getenv("FAB_BASE_DIR", "").strip() or Path(__file__).resolve().parents[2])
 
 
 def _default_data_dir() -> Path:
@@ -31,8 +31,7 @@ APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 BUNDLED_DB_PATH = BASE_DIR / "database.db"
 
 load_dotenv(BASE_DIR / ".env")
-if os.getenv("FAB_DESKTOP", "0") == "1":
-    load_dotenv(APP_DATA_DIR / ".env", override=False)
+load_dotenv(APP_DATA_DIR / ".env", override=False)
 
 
 @dataclass(slots=True)

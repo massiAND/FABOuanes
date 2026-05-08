@@ -14,14 +14,16 @@
     --print-screen-scale:{{ print_layout.screen_scale }};
     --print-summary-width:{{ print_layout.summary_width_px }}px;
   }
-  .print-doc-shell{width:min(100%,var(--print-content-width));max-width:var(--print-content-width);margin:0 auto;display:flex;flex-direction:column;gap:var(--print-gap);}
-  .print-doc-paper{background:#fff;border:1px solid #d7dee8;border-radius:6px;box-shadow:0 6px 18px rgba(15,23,42,.05);overflow:hidden;min-height:var(--print-paper-height);}
+  html,body{overflow-x:auto!important;}
+  body.print-route .app-content{min-width:var(--print-content-width);}
+  .print-doc-shell{width:var(--print-content-width);min-width:var(--print-content-width);max-width:none;margin:0 auto;display:flex;flex-direction:column;gap:var(--print-gap);}
+  .print-doc-paper{background:#fff;border:1px solid #d7dee8;border-radius:6px;box-shadow:0 6px 18px rgba(15,23,42,.05);overflow:hidden;min-height:var(--print-paper-height);font-family:"Plus Jakarta Sans",var(--font-main),Arial,Helvetica,sans-serif;}
   .print-doc-header{padding:var(--print-header-padding) var(--print-body-padding) 6mm;border-bottom:1px solid #d7dee8;break-inside:avoid;page-break-inside:avoid;}
   .print-doc-top-grid{display:grid;grid-template-columns:minmax(0,1fr) 60mm;gap:8mm;align-items:start;}
   .print-doc-brand-row{display:block;min-width:0;max-width:128mm;}
   .print-doc-brand-logo{display:block;width:min(128mm,100%);height:auto;max-height:45mm;object-fit:contain;object-position:left top;}
   .print-doc-brand-copy{display:none;}
-  .print-doc-brand-name{margin:0;font-family:Arial,Helvetica,sans-serif;font-size:33pt;line-height:.9;font-weight:900;color:#000;letter-spacing:0;}
+  .print-doc-brand-name{margin:0;font-family:"Plus Jakarta Sans",var(--font-main),Arial,Helvetica,sans-serif;font-size:33pt;line-height:.9;font-weight:900;color:#000;letter-spacing:0;}
   .print-doc-brand-subtitle{margin:2mm 0 0;font-size:14pt;line-height:1.08;color:#222;font-weight:400;}
   .print-doc-contact-list{display:grid;grid-template-columns:1fr;gap:3mm;margin-top:6mm;color:#222;font-size:10.2pt;line-height:1.2;}
   .print-doc-contact-row{display:grid;grid-template-columns:8mm minmax(0,1fr);gap:3mm;align-items:center;}
@@ -68,23 +70,6 @@
   @page{size:A4 portrait;margin:{{ print_layout.page_margin_mm }}mm;}
   @media screen and (min-width:768px){
     .print-doc-shell{zoom:var(--print-screen-scale);}
-  }
-  @media screen and (max-width:767px){
-    .print-doc-shell{max-width:100%;}
-    .print-doc-paper{min-height:auto;}
-    .print-doc-header{padding:22px 18px 18px;}
-    .print-doc-top-grid{grid-template-columns:1fr;gap:20px;}
-    .print-doc-brand-logo{width:min(100%,520px);max-height:none;}
-    .print-doc-brand-name{font-size:2.25rem;}
-    .print-doc-brand-subtitle{font-size:.95rem;}
-    .print-doc-contact-list{margin-top:18px;font-size:.95rem;}
-    .print-doc-invoice-title{font-size:2rem;}
-    .print-doc-refrow{grid-template-columns:130px 1fr;}
-    .print-doc-client-box{margin-top:28px;}
-    .print-doc-client-meta-row{grid-template-columns:1fr;gap:10px;}
-    .print-doc-table-wrap,.print-doc-summary,.print-doc-footer{padding-left:18px;padding-right:18px;}
-    .print-doc-actions{flex-direction:column;align-items:stretch;}
-    .print-doc-actions > *{width:100%;}
   }
   @media print{
     html,body{margin:0!important;padding:0!important;}
@@ -194,6 +179,7 @@
     </footer>
   </article>
 
+  {% if request.query_params.get('embed') != '1' %}
   <div class="print-doc-actions no-print">
     <button class="btn btn-outline-secondary" id="btnBack"><i class="bi bi-arrow-left me-1"></i>Retour</button>
     <div class="d-flex gap-2 flex-wrap">
@@ -201,6 +187,7 @@
       <a href="?format=pdf" class="btn btn-dark" id="btnPrint" target="_blank"><i class="bi bi-file-earmark-pdf me-2"></i>Telecharger PDF</a>
     </div>
   </div>
+  {% endif %}
 </div>
 
 <script>

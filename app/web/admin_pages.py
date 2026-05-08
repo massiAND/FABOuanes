@@ -41,7 +41,12 @@ async def admin_panel_submit(request: Request):
     if action == "create_user":
         result = create_user_account(form.get("username", ""), form.get("password", ""), form.get("role", "operator"))
     elif action == "update_user":
-        result = update_user_account(int(form.get("user_id", "0") or 0), form.get("role", "operator"), form.get("is_active") == "1")
+        result = update_user_account(
+            int(form.get("user_id", "0") or 0),
+            form.get("role", "operator"),
+            form.get("is_active") == "1",
+            form.get("new_password", ""),
+        )
     elif action == "save_backup_settings":
         result = save_backup_settings_from_form(dict(form))
     elif action == "backup_now":

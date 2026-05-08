@@ -29,6 +29,7 @@
       </div>
     </div>
     <form method="post" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="create_user">
       <div class="col-12">
         <label class="form-label">Nom d'utilisateur</label>
@@ -73,6 +74,7 @@
       {% endif %}
     </div>
     <form method="post" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="save_backup_settings">
       <div class="col-12">
         <label class="form-label">Dossier Google Drive local</label>
@@ -108,11 +110,13 @@
       </div>
     </div>
     <form method="post" class="d-grid gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="backup_now">
       <button class="btn btn-dark">Creer une sauvegarde maintenant</button>
     </form>
     <hr>
     <form method="post" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="restore_backup">
       <div class="col-12">
         <label class="form-label">Restaurer depuis</label>
@@ -133,44 +137,50 @@
     <div class="card-header-row">
       <div>
         <h5 class="section-title">Utilisateurs</h5>
-        <div class="small text-muted mt-1">Actif, role, derniere connexion et rotation mot de passe.</div>
+        <div class="small text-muted mt-1">Actif, role, derniere connexion et modification mot de passe.</div>
       </div>
     </div>
     <div class="table-responsive">
       <table class="table js-datagrid align-middle">
         <thead>
-          <tr><th>Utilisateur</th><th>Role</th><th>Actif</th><th>Derniere connexion</th><th>Mot de passe</th><th>Action</th></tr>
+          <tr><th>Utilisateur</th><th>Role</th><th>Actif</th><th>Derniere connexion</th><th>PIN / Mot de passe</th><th>Action</th></tr>
         </thead>
         <tbody>
           {% for u in users %}
-          <form method="post" class="table-row-form">
-            <input type="hidden" name="action" value="update_user">
-            <input type="hidden" name="user_id" value="{{ u.id }}">
-            <tr>
-              <td>
-                <div class="fw-semibold">{{ u.username }}</div>
-                <div class="small text-muted">Cree le {{ (u.created_at or '')[:16] }}</div>
-              </td>
-              <td>
-                <select name="role" class="form-select form-select-sm">
-                  <option value="operator" {% if u.role == 'operator' %}selected{% endif %}>operator</option>
-                  <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>manager</option>
-                  <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>admin</option>
-                </select>
-              </td>
-              <td>
-                <select name="is_active" class="form-select form-select-sm">
-                  <option value="1" {% if u.is_active %}selected{% endif %}>Oui</option>
-                  <option value="0" {% if not u.is_active %}selected{% endif %}>Non</option>
-                </select>
-              </td>
-              <td><span class="small text-muted">{{ (u.last_login_at or 'Jamais') }}</span></td>
-              <td><span class="small text-muted">{{ (u.last_password_change_at or 'Jamais') }}</span></td>
-              <td>
-                <button type="submit" class="btn btn-sm btn-outline-dark w-100">Sauver</button>
-              </td>
-            </tr>
-          </form>
+          {% set user_form_id = 'adminUserForm' ~ u.id %}
+          <tr>
+            <td>
+              <form id="{{ user_form_id }}" method="post" class="m-0"></form>
+              <input form="{{ user_form_id }}" type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input form="{{ user_form_id }}" type="hidden" name="action" value="update_user">
+              <input form="{{ user_form_id }}" type="hidden" name="user_id" value="{{ u.id }}">
+              <div class="fw-semibold">{{ u.username }}</div>
+              <div class="small text-muted">Cree le {{ (u.created_at or '')[:16] }}</div>
+            </td>
+            <td>
+              <select form="{{ user_form_id }}" name="role" class="form-select form-select-sm">
+                <option value="operator" {% if u.role == 'operator' %}selected{% endif %}>operator</option>
+                <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>manager</option>
+                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>admin</option>
+              </select>
+            </td>
+            <td>
+              <select form="{{ user_form_id }}" name="is_active" class="form-select form-select-sm">
+                <option value="1" {% if u.is_active %}selected{% endif %}>Oui</option>
+                <option value="0" {% if not u.is_active %}selected{% endif %}>Non</option>
+              </select>
+            </td>
+            <td><span class="small text-muted">{{ (u.last_login_at or 'Jamais') }}</span></td>
+            <td>
+              <div class="d-grid gap-1" style="min-width:140px;">
+                <input form="{{ user_form_id }}" name="new_password" type="password" class="form-control form-control-sm" autocomplete="new-password" inputmode="numeric" pattern="\d{4}" maxlength="4" minlength="4" placeholder="Nouveau PIN">
+                <span class="small text-muted">Dernier: {{ (u.last_password_change_at or 'Jamais') }}</span>
+              </div>
+            </td>
+            <td>
+              <button form="{{ user_form_id }}" type="submit" class="btn btn-sm btn-outline-dark w-100">Sauver</button>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -333,6 +343,7 @@
       <a href="{{ url_for('admin_system_status') }}" class="btn btn-sm btn-outline-dark"><i class="bi bi-clipboard2-pulse me-1"></i> Etat du systeme</a>
     </div>
     <form method="post" class="d-flex gap-2 flex-wrap mb-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="sqlite_maintenance">
       <button class="btn btn-outline-dark" onclick="return confirm('Lancer ANALYZE, PRAGMA optimize et integrity_check ?')">
         <i class="bi bi-speedometer2 me-1"></i>Maintenance SQLite

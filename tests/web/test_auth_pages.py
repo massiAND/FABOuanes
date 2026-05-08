@@ -5,6 +5,7 @@ def test_login_page_renders(client):
     response = client.get("/login")
     assert response.status_code == 200
     assert "Se connecter" in response.text
+    assert "dashboard.png" in response.text
 
 
 def test_login_redirects_after_success(client):

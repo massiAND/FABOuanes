@@ -29,6 +29,11 @@ def create_request_connection():
 
 
 def _load_alembic():
+    if getattr(sys, "frozen", False):
+        command = importlib.import_module("alembic.command")
+        config_mod = importlib.import_module("alembic.config")
+        return command, config_mod.Config
+
     original_sys_path = list(sys.path)
     base_dir = str(settings.base_dir.resolve())
     try:
@@ -40,9 +45,17 @@ def _load_alembic():
         sys.path = original_sys_path
 
 
+def _alembic_script_location() -> Path:
+    bundled_location = settings.base_dir / "migration_scripts" / "alembic"
+    if bundled_location.exists():
+        return bundled_location
+    return settings.base_dir / "alembic"
+
+
 def _alembic_config():
     _, Config = _load_alembic()
     cfg = Config(str(settings.base_dir / "alembic.ini"))
+    cfg.set_main_option("script_location", str(_alembic_script_location()))
     cfg.set_main_option("sqlalchemy.url", sqlalchemy_database_url(settings.database_url))
     return cfg
 

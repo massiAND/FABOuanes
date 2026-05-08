@@ -2,8 +2,10 @@
 {% block content %}
 {% set company = company %}
 <style>
-  .print-doc-shell{width:min(100%,190mm);max-width:190mm;margin:0 auto;display:flex;flex-direction:column;gap:5mm;}
-  .print-doc-paper{background:#fff;color:#111;border:1px solid #cfd3d8;border-radius:6px;box-shadow:0 10px 26px rgba(15,23,42,.08);padding:8mm;min-height:277mm;font-family:Arial,Helvetica,sans-serif;}
+  html,body{overflow-x:auto!important;}
+  body.print-route .app-content{min-width:190mm;}
+  .print-doc-shell{width:190mm;min-width:190mm;max-width:none;margin:0 auto;display:flex;flex-direction:column;gap:5mm;}
+  .print-doc-paper{background:#fff;color:#111;border:1px solid #cfd3d8;border-radius:6px;box-shadow:0 10px 26px rgba(15,23,42,.08);padding:8mm;min-height:277mm;font-family:"Plus Jakarta Sans",var(--font-main),Arial,Helvetica,sans-serif;}
   .print-doc-top{display:grid;grid-template-columns:minmax(0,1fr) 76mm;gap:11mm;align-items:start;margin-bottom:9mm;}
   .print-doc-company{display:block;min-width:0;}
   .print-doc-party{min-width:0;}
@@ -54,20 +56,6 @@
   .print-doc-signature-line{width:62mm;max-width:100%;height:1px;background:#111;margin:0 auto;}
   .print-doc-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
   @page{size:A4 portrait;margin:10mm;}
-  @media screen and (max-width:767px){
-    .print-doc-shell{max-width:100%;}
-    .print-doc-paper{min-height:auto;padding:18px;}
-    .print-doc-top,.print-doc-bottom{grid-template-columns:1fr;gap:18px;}
-    .print-doc-logo{width:min(100%,520px);max-height:none;}
-    .print-doc-brand{font-size:2rem;}
-    .print-doc-tagline{font-size:1rem;margin-bottom:14px;}
-    .print-doc-invoice-title{font-size:2rem;}
-    .print-doc-refrow{grid-template-columns:130px 1fr;}
-    .print-doc-table-wrap{overflow-x:auto;}
-    .print-doc-table{min-width:720px;}
-    .print-doc-actions{flex-direction:column;align-items:stretch;}
-    .print-doc-actions > *{width:100%;}
-  }
   @media print{
     html,body{margin:0!important;padding:0!important;}
     .no-print,.app-navbar,.page-hero,.table-toolbar,.context-menu,.btn,.dropdown,.alert{display:none!important;}
@@ -175,9 +163,11 @@
     </section>
   </article>
 
+  {% if request.query_params.get('embed') != '1' %}
   <div class="print-doc-actions no-print">
     <a href="{{ url_for('client_detail', client_id=client.id) }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Retour</a>
     <button class="btn btn-dark" type="button" onclick="window.print()"><i class="bi bi-printer me-2"></i>Imprimer la page</button>
   </div>
+  {% endif %}
 </div>
 {% endblock %}

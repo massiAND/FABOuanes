@@ -12,6 +12,7 @@ from pathlib import Path
 
 APP_NAME = "FABOuanes"
 SERVER_MODE_ARGS = {"--server", "--server-only", "--network-server"}
+SQLITE_FALLBACK_ARGS = {"--desktop-fallback", "--sqlite-fallback"}
 LAUNCH_ARGS = {arg.strip().lower() for arg in sys.argv[1:] if arg.strip()}
 try:
     from app.version import VERSION_LABEL as APP_VERSION
@@ -35,9 +36,19 @@ DESKTOP_ICON_PATH = STATIC_DIR / "FABOuanes_desktop.ico"
 FALLBACK_ICON_PATH = STATIC_DIR / "FABOuanes.ico"
 SPLASH_LOGO_PATH = STATIC_DIR / "desktop_logo_shield.png"
 os.chdir(BASE_DIR)
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR / ".env")
+    load_dotenv(DATA_DIR / ".env", override=False)
+except Exception:
+    pass
+
 os.environ["FAB_BASE_DIR"] = str(BASE_DIR)
 os.environ["FAB_DATA_DIR"] = str(DATA_DIR)
-os.environ["FAB_DESKTOP"] = "0" if LAUNCH_ARGS & SERVER_MODE_ARGS else "1"
+SQLITE_FALLBACK_REQUESTED = bool(LAUNCH_ARGS & SQLITE_FALLBACK_ARGS) or os.getenv("FAB_DESKTOP", "").strip() == "1"
+os.environ["FAB_DESKTOP"] = "1" if SQLITE_FALLBACK_REQUESTED else "0"
 # Network and desktop launches keep DATABASE_URL intact so every client uses
 # the same PostgreSQL server by default.
 
@@ -99,8 +110,9 @@ def create_pre_migration_backup(reason: str) -> Path | None:
 def bootstrap_desktop_install(reason: str = "desktop_startup") -> dict:
     ensure_desktop_paths()
     install_state = read_install_state()
-    preexisting_db = DST_DB_PATH.exists()
-    seeded_from_bundle = seed_database_if_missing()
+    sqlite_fallback = os.environ.get("FAB_DESKTOP", "0") == "1"
+    preexisting_db = sqlite_fallback and DST_DB_PATH.exists()
+    seeded_from_bundle = seed_database_if_missing() if sqlite_fallback else False
     migration_backup = None
     if preexisting_db and install_state.get("app_version") != APP_VERSION:
         migration_backup = create_pre_migration_backup(reason)
@@ -166,11 +178,12 @@ def server_access_lines(host: str, port: int, lan_ip: str | None = None) -> list
     client_host = lan_ip or (get_local_ip() if host == "0.0.0.0" else host)
     lines = [
         f"Localhost / cette machine : http://127.0.0.1:{port}",
-        f"Machine client du reseau : http://{client_host}:{port}",
+        f"Machine cliente du reseau : http://{client_host}:{port}",
         f"Mode serveur / ecoute : {host}:{port}",
     ]
     if host == "0.0.0.0":
         lines.append("Note: 0.0.0.0 accepte les connexions reseau, mais ne s'ouvre pas dans le navigateur.")
+        lines.append("Si une machine cliente ne se connecte pas, autoriser Python/FABOuanes dans le pare-feu Windows.")
     return lines
 
 
@@ -415,10 +428,9 @@ def main() -> None:
         print("Erreur: le serveur n'a pas demarre. Verifie que les dependances de requirements.txt sont installees.")
         sys.exit(1)
 
-    if host == "0.0.0.0":
-        lan_ip = os.environ.get("FAB_LAN_IP", get_local_ip())
-        print(f"Acces local : http://127.0.0.1:{port}")
-        print(f"Acces Android / reseau : http://{lan_ip}:{port}")
+    lan_ip = os.environ.get("FAB_LAN_IP") or (get_local_ip() if host == "0.0.0.0" else host)
+    print_server_access(host, port, lan_ip)
+    print("Garde cette application ouverte pour laisser les autres machines connectees.", flush=True)
 
     open_ui(f"http://127.0.0.1:{port}")
 

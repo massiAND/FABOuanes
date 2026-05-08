@@ -1,30 +1,45 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-  .login-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:#eef3f8;}
-  [data-theme="dark"] .login-page{background:#0f172a;}
-  .login-card{width:min(100%,380px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px;box-shadow:0 22px 55px rgba(15,23,42,.14);}
-  .login-logo{display:block;width:82px;height:82px;object-fit:contain;margin:0 auto 22px;border-radius:18px;}
+  .login-page{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#eef4ff 0%,#f8fafc 48%,#effaf4 100%);}
+  [data-theme="dark"] .login-page{background:linear-gradient(135deg,#0f172a 0%,#111827 54%,#0b1220 100%);}
+  .login-card{width:min(100%,430px);background:var(--card);border:1px solid rgba(148,163,184,.22);border-radius:10px;padding:30px;box-shadow:0 24px 70px rgba(15,23,42,.16);}
+  .login-brand{display:grid;justify-items:center;gap:12px;margin-bottom:22px;text-align:center;}
+  .login-logo-frame{width:min(100%,250px);aspect-ratio:1408/768;display:grid;place-items:center;padding:10px;border-radius:10px;background:#fff;border:1px solid rgba(148,163,184,.22);box-shadow:0 14px 32px rgba(15,23,42,.08);}
+  .login-logo{display:block;width:100%;height:100%;object-fit:contain;}
+  .login-title{margin:0;font-size:1.28rem;line-height:1.15;font-weight:900;color:var(--text);}
+  .login-subtitle{margin:4px 0 0;color:var(--muted);font-size:.9rem;font-weight:700;}
+  [data-theme="dark"] .login-logo-frame{background:#fff;border-color:rgba(148,163,184,.22);box-shadow:0 18px 38px rgba(0,0,0,.24);}
   .login-alert{margin-bottom:16px;border-radius:8px;font-size:.88rem;font-weight:600;}
   .login-field{margin-bottom:14px;}
   .login-label{display:block;margin-bottom:7px;color:var(--text);font-size:.88rem;font-weight:700;}
   .login-input-wrap{position:relative;}
   .login-input-wrap>i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none;}
-  .login-input{width:100%;height:48px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-size:.95rem;font-weight:600;padding:0 42px;}
+  .login-input{width:100%;height:48px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-size:.95rem;font-weight:600;padding:0 42px;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+  [data-theme="dark"] .login-input{background:#0d1117;}
   .login-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.14);}
   .toggle-pass{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--muted);display:grid;place-items:center;}
   .toggle-pass:hover{background:rgba(37,99,235,.08);color:#2563eb;}
   .login-options{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px;}
   .remember-check{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.86rem;font-weight:600;}
   .remember-check input{width:16px;height:16px;accent-color:#2563eb;}
-  .btn-login{width:100%;height:48px;border:0;border-radius:8px;background:#1d4ed8;color:#fff;font-size:.96rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px;}
-  .btn-login:hover{background:#1e40af;}
-  @media(max-width:575px){.login-page{padding:16px}.login-card{padding:22px}.login-logo{width:74px;height:74px;margin-bottom:18px}}
+  .btn-login{width:100%;height:48px;border:0;border-radius:8px;background:#1d4ed8;color:#fff;font-size:.96rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 12px 26px rgba(37,99,235,.24);transition:background .15s ease,transform .15s ease,box-shadow .15s ease;}
+  .btn-login:hover{background:#1e40af;transform:translateY(-1px);box-shadow:0 15px 30px rgba(37,99,235,.28);}
+  .btn-login:active{transform:translateY(0);}
+  @media(max-width:575px){.login-page{padding:16px}.login-card{padding:24px}.login-logo-frame{width:min(100%,220px)}}
 </style>
 
 <div class="login-page">
   <main class="login-card" aria-label="Connexion">
-    <img src="{{ url_for('static', filename='desktop_logo_shield.png') }}" alt="FABOuanes" class="login-logo">
+    <div class="login-brand">
+      <div class="login-logo-frame">
+        <img src="{{ url_for('static', filename='dashboard.png') }}" alt="FABOuanes" class="login-logo" loading="eager" decoding="async">
+      </div>
+      <div>
+        <h1 class="login-title">Connexion</h1>
+        <p class="login-subtitle">Acces a FABOuanes</p>
+      </div>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in messages %}

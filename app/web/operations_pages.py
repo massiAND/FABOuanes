@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 from app.services.print_service import COMPANY_INFO, PRINT_LAYOUT, build_print_payload, generate_invoice_pdf
 from app.services.transactions_service import transactions_context, update_production_notes
@@ -12,6 +12,22 @@ from app.core.permissions import PERMISSION_OPERATIONS_READ, PERMISSION_PRODUCTI
 
 
 router = APIRouter()
+
+
+def _print_not_found_response(message: str = "Bon introuvable.") -> HTMLResponse:
+    return HTMLResponse(
+        f"""<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#111827;display:grid;place-items:center;min-height:100vh;">
+  <main style="max-width:520px;padding:24px;text-align:center;">
+    <h1 style="font-size:1.25rem;margin:0 0 8px;">{message}</h1>
+    <p style="margin:0;color:#64748b;">Le document demande n'existe plus ou n'est pas disponible.</p>
+  </main>
+</body>
+</html>""",
+        status_code=404,
+    )
 
 
 @router.get("/operations", name="operations")
@@ -38,8 +54,7 @@ async def print_document_page(request: Request, doc_type: str, item_id: int):
         return login_redirect()
     payload = build_print_payload(doc_type, item_id)
     if not payload:
-        flash(request, "Document introuvable pour impression.", "danger")
-        return RedirectResponse("/", status_code=303)
+        return _print_not_found_response("Document introuvable pour impression.")
     printed_at = datetime.now()
     payload = {
         **payload,

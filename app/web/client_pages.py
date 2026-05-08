@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.core.activity import log_activity
 from app.core.db_access import execute_db, query_db
@@ -23,6 +23,22 @@ from app.web.deps import csrf_protect, flash, get_current_user, require_permissi
 
 
 router = APIRouter()
+
+
+def _history_not_found_response() -> HTMLResponse:
+    return HTMLResponse(
+        """<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#111827;display:grid;place-items:center;min-height:100vh;">
+  <main style="max-width:520px;padding:24px;text-align:center;">
+    <h1 style="font-size:1.25rem;margin:0 0 8px;">Historique client introuvable.</h1>
+    <p style="margin:0;color:#64748b;">Le client demande n'existe plus ou n'est pas disponible.</p>
+  </main>
+</body>
+</html>""",
+        status_code=404,
+    )
 
 CLIENTS_FILTER_URL = "/contacts?type=client"
 NEW_CLIENT_URL = "/contacts/clients/new"
@@ -176,8 +192,7 @@ async def print_client_history(request: Request, client_id: int):
         return denied
     context = get_client_detail_context(client_id)
     if not context:
-        flash(request, "Client introuvable.", "danger")
-        return RedirectResponse(CLIENTS_FILTER_URL, status_code=303)
+        return _history_not_found_response()
     printed_at = datetime.now()
     user = get_current_user(request) or {}
     return templates.TemplateResponse(

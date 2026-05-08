@@ -5,7 +5,7 @@ from urllib.parse import quote
 from app.core.db_access import query_db
 from app.utils.tool_pages import list_pdf_reader_files
 
-DEFAULT_LIMIT = 120
+DEFAULT_LIMIT = 80
 
 
 def _as_float(value) -> float:
@@ -338,13 +338,14 @@ def _append_external_pdfs(documents: list[dict]) -> None:
 
 
 def list_bon_space_documents(q: str = "", kind: str = "", limit: int = DEFAULT_LIMIT) -> list[dict]:
-    limit = max(20, min(int(limit or DEFAULT_LIMIT), 500))
+    limit = max(20, min(int(limit or DEFAULT_LIMIT), 200))
+    source_limit = max(limit, 80)
     documents: list[dict] = []
-    _append_purchase_documents(documents, limit)
-    _append_sale_documents(documents, limit)
-    _append_payment_documents(documents, limit)
-    _append_production_documents(documents, limit)
-    _append_client_history_documents(documents, limit)
+    _append_purchase_documents(documents, source_limit)
+    _append_sale_documents(documents, source_limit)
+    _append_payment_documents(documents, source_limit)
+    _append_production_documents(documents, source_limit)
+    _append_client_history_documents(documents, source_limit)
     _append_external_pdfs(documents)
 
     normalized_kind = str(kind or "").strip().lower()
@@ -362,7 +363,7 @@ def list_bon_space_documents(q: str = "", kind: str = "", limit: int = DEFAULT_L
     def sort_key(item: dict) -> tuple[str, str]:
         return (str(item.get("doc_date") or ""), str(item.get("number") or ""))
 
-    return sorted(documents, key=sort_key, reverse=True)
+    return sorted(documents, key=sort_key, reverse=True)[:limit]
 
 
 def find_bon_space_document(documents: list[dict], selected_key: str = "") -> dict | None:
@@ -371,4 +372,5 @@ def find_bon_space_document(documents: list[dict], selected_key: str = "") -> di
         for item in documents:
             if item["key"] == selected_key:
                 return item
+        return None
     return documents[0] if documents else None

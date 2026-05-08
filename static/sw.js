@@ -1,4 +1,4 @@
-const VERSION = "fabouanes-v29-nav-hide-perf";
+const VERSION = "fabouanes-v33-login-print-font";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const OFFLINE_URL = "/static/offline.html";
@@ -14,6 +14,8 @@ const PRECACHE = [
   "/static/dashboard.png",
   "/static/fab_invoice_logo.png",
   "/static/fab_invoice_logo_clean.png",
+  "/static/fonts/PlusJakartaSans-Regular.ttf",
+  "/static/fonts/PlusJakartaSans-Bold.ttf",
   "/static/app.css",
   "/static/app.js",
   "/static/css/tokens.css",

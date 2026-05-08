@@ -48,7 +48,7 @@ if errorlevel 1 (
 
 echo.
 echo  [3/4] Compilation de l'EXE FastAPI...
-set "PYINSTALLER_DATA_ARGS=--add-data=templates;templates --add-data=static;static --add-data=.env.example;. --add-data=app;app --add-data=alembic;alembic --add-data=alembic.ini;."
+set "PYINSTALLER_DATA_ARGS=--add-data=templates;templates --add-data=static;static --add-data=.env.example;. --add-data=app;app --add-data=alembic;migration_scripts\alembic --add-data=alembic.ini;."
 if exist ".env" (
     echo  Info: .env local detecte, il sera inclus dans ce build.
     set "PYINSTALLER_DATA_ARGS=%PYINSTALLER_DATA_ARGS% --add-data=.env;."
@@ -74,6 +74,8 @@ if exist "database.db" (
     --hidden-import "uvicorn.protocols.websockets.auto" ^
     --hidden-import "sqlalchemy" ^
     --hidden-import "alembic" ^
+    --hidden-import "alembic.command" ^
+    --hidden-import "alembic.config" ^
     --hidden-import "multipart" ^
     --hidden-import "werkzeug" ^
     --hidden-import "reportlab.pdfgen" ^
@@ -91,6 +93,7 @@ if exist "database.db" (
     --collect-submodules "starlette" ^
     --collect-submodules "uvicorn" ^
     --collect-submodules "sqlalchemy" ^
+    --collect-submodules "alembic" ^
     --collect-submodules "qrcode" ^
     --collect-submodules "PIL" ^
     launcher.py

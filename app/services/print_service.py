@@ -13,6 +13,8 @@ try:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import cm
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import HRFlowable, Image as RLImage, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     REPORTLAB_AVAILABLE = True
@@ -43,6 +45,28 @@ COMPANY_INFO = {
     "phones": "0771214948 / 0553183302",
     "email": "ouanesfab@gmail.com",
 }
+
+PDF_FONT_REGULAR = "PlusJakartaSans"
+PDF_FONT_BOLD = "PlusJakartaSans-Bold"
+
+
+def _pdf_font_names() -> tuple[str, str]:
+    if not REPORTLAB_AVAILABLE:
+        return "Helvetica", "Helvetica-Bold"
+    fonts_dir = BASE_DIR / "static" / "fonts"
+    regular_path = fonts_dir / "PlusJakartaSans-Regular.ttf"
+    bold_path = fonts_dir / "PlusJakartaSans-Bold.ttf"
+    if not regular_path.exists() or not bold_path.exists():
+        return "Helvetica", "Helvetica-Bold"
+    try:
+        for font_name, font_path in ((PDF_FONT_REGULAR, regular_path), (PDF_FONT_BOLD, bold_path)):
+            try:
+                pdfmetrics.getFont(font_name)
+            except KeyError:
+                pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
+    except Exception:
+        return "Helvetica", "Helvetica-Bold"
+    return PDF_FONT_REGULAR, PDF_FONT_BOLD
 
 
 def _payment_mode_label(value: str | None) -> str:
@@ -491,6 +515,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     )
     content_width = float(page_doc.width)
     styles = getSampleStyleSheet()
+    pdf_font_regular, pdf_font_bold = _pdf_font_names()
     dark = colors.HexColor("#111827")
     muted = colors.HexColor("#6B7280")
     light = colors.HexColor("#F8FAFC")
@@ -500,7 +525,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     title_style = ParagraphStyle(
         "print_title",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=16.5,
         leading=18.0,
         textColor=dark,
@@ -510,7 +535,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     subtitle_style = ParagraphStyle(
         "print_subtitle",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=8.6,
         leading=10.8,
         textColor=muted,
@@ -519,7 +544,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     label_style = ParagraphStyle(
         "print_label",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=7.0,
         leading=8.6,
         textColor=muted,
@@ -527,7 +552,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     value_style = ParagraphStyle(
         "print_value",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=9.0,
         leading=11.2,
         textColor=dark,
@@ -556,7 +581,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     prepared_value_style = ParagraphStyle(
         "print_prepared_value",
         parent=value_style,
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=8.3,
         leading=10.0,
         textColor=colors.HexColor("#374151"),
@@ -575,7 +600,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     table_head_style = ParagraphStyle(
         "print_table_head",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=7.1,
         leading=8.5,
         textColor=colors.HexColor("#374151"),
@@ -583,7 +608,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     cell_style = ParagraphStyle(
         "print_cell",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=8.3,
         leading=10.3,
         textColor=dark,
@@ -591,7 +616,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     cell_bold_style = ParagraphStyle(
         "print_cell_bold",
         parent=cell_style,
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
     )
     cell_right_style = ParagraphStyle(
         "print_cell_right",
@@ -601,7 +626,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     footer_style = ParagraphStyle(
         "print_footer",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=8.0,
         leading=10.0,
         alignment=TA_CENTER,
@@ -610,7 +635,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     brand_name_style = ParagraphStyle(
         "print_brand_name",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=30.0,
         leading=29.0,
         textColor=colors.black,
@@ -618,7 +643,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     brand_subtitle_style = ParagraphStyle(
         "print_brand_subtitle",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=12.6,
         leading=14.0,
         textColor=colors.HexColor("#222222"),
@@ -626,7 +651,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     contact_style = ParagraphStyle(
         "print_contact",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=10.8,
         leading=14.0,
         textColor=colors.HexColor("#222222"),
@@ -634,7 +659,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     invoice_title_style = ParagraphStyle(
         "print_invoice_title",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=28.0,
         leading=29.0,
         textColor=colors.black,
@@ -643,7 +668,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     invoice_label_style = ParagraphStyle(
         "print_invoice_label",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=pdf_font_bold,
         fontSize=10.5,
         leading=13.0,
         textColor=colors.black,
@@ -651,7 +676,7 @@ def generate_invoice_pdf(doc: dict[str, Any], printed_by: str) -> BytesIO | None
     invoice_value_style = ParagraphStyle(
         "print_invoice_value",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=pdf_font_regular,
         fontSize=10.5,
         leading=13.0,
         textColor=colors.HexColor("#222222"),
@@ -934,6 +959,7 @@ def _generate_invoice_pdf_model(doc: dict[str, Any], printed_by: str) -> BytesIO
     )
     content_width = float(page_doc.width)
     styles = getSampleStyleSheet()
+    pdf_font_regular, pdf_font_bold = _pdf_font_names()
     black = colors.black
     line = colors.HexColor("#777777")
     light = colors.HexColor("#F5F5F5")
@@ -948,19 +974,19 @@ def _generate_invoice_pdf_model(doc: dict[str, Any], printed_by: str) -> BytesIO
     show_partner_phone = str(doc.get("partner_label", "")).strip().lower() != "client"
     story = []
 
-    brand_style = ParagraphStyle("model_brand", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=30, leading=30, textColor=black)
-    subtitle_style = ParagraphStyle("model_company_subtitle", parent=styles["Normal"], fontName="Helvetica", fontSize=14, leading=16, textColor=colors.HexColor("#222222"))
-    contact_style = ParagraphStyle("model_contact", parent=styles["Normal"], fontName="Helvetica", fontSize=10, leading=13, textColor=black)
-    box_title_style = ParagraphStyle("model_box_title", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=28, leading=30, textColor=black, alignment=TA_CENTER)
-    label_style = ParagraphStyle("model_label", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=12, textColor=black)
-    value_style = ParagraphStyle("model_value", parent=styles["Normal"], fontName="Helvetica", fontSize=10, leading=12, textColor=colors.HexColor("#222222"))
-    table_head_style = ParagraphStyle("model_table_head", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=12, textColor=black, alignment=TA_CENTER)
-    cell_style = ParagraphStyle("model_cell", parent=styles["Normal"], fontName="Helvetica", fontSize=9, leading=11, textColor=black)
-    cell_bold_style = ParagraphStyle("model_cell_bold", parent=cell_style, fontName="Helvetica-Bold")
+    brand_style = ParagraphStyle("model_brand", parent=styles["Normal"], fontName=pdf_font_bold, fontSize=30, leading=30, textColor=black)
+    subtitle_style = ParagraphStyle("model_company_subtitle", parent=styles["Normal"], fontName=pdf_font_regular, fontSize=14, leading=16, textColor=colors.HexColor("#222222"))
+    contact_style = ParagraphStyle("model_contact", parent=styles["Normal"], fontName=pdf_font_regular, fontSize=10, leading=13, textColor=black)
+    box_title_style = ParagraphStyle("model_box_title", parent=styles["Normal"], fontName=pdf_font_bold, fontSize=28, leading=30, textColor=black, alignment=TA_CENTER)
+    label_style = ParagraphStyle("model_label", parent=styles["Normal"], fontName=pdf_font_bold, fontSize=10, leading=12, textColor=black)
+    value_style = ParagraphStyle("model_value", parent=styles["Normal"], fontName=pdf_font_regular, fontSize=10, leading=12, textColor=colors.HexColor("#222222"))
+    table_head_style = ParagraphStyle("model_table_head", parent=styles["Normal"], fontName=pdf_font_bold, fontSize=10, leading=12, textColor=black, alignment=TA_CENTER)
+    cell_style = ParagraphStyle("model_cell", parent=styles["Normal"], fontName=pdf_font_regular, fontSize=9, leading=11, textColor=black)
+    cell_bold_style = ParagraphStyle("model_cell_bold", parent=cell_style, fontName=pdf_font_bold)
     cell_right_style = ParagraphStyle("model_cell_right", parent=cell_style, alignment=TA_RIGHT)
     tab_style = ParagraphStyle("model_tab", parent=label_style, textColor=colors.white, alignment=TA_CENTER)
     total_label_style = ParagraphStyle("model_total_label", parent=label_style, fontSize=14, leading=16)
-    total_value_style = ParagraphStyle("model_total_value", parent=cell_right_style, fontName="Helvetica-Bold", fontSize=14, leading=16)
+    total_value_style = ParagraphStyle("model_total_value", parent=cell_right_style, fontName=pdf_font_bold, fontSize=14, leading=16)
 
     logo_cell = _logo_cell(BASE_DIR / "static" / "fab_logo.png", 2.35, 2.35)
     company_copy = [
