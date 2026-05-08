@@ -1,8 +1,9 @@
 @echo off
-title FABOuanes
+title FABOuanes - Serveur reseau
 cd /d %~dp0
 echo.
-echo  Demarrage de FABOuanes...
+echo  Demarrage de FABOuanes en mode serveur reseau...
+echo  PostgreSQL local est utilise par defaut. SQLite est reserve au fallback explicite.
 echo.
 
 set "PY_CMD="
@@ -28,5 +29,6 @@ if errorlevel 1 (
     pause & exit /b 1
 )
 
-%PY_CMD% launcher.py
+set FAB_HOST=0.0.0.0
+%PY_CMD% launcher.py --server
 pause

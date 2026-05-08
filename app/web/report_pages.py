@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 from app.version import VERSION_LABEL
 from app.core.runtime_paths import paths
+from app.services.bon_space_service import find_bon_space_document, list_bon_space_documents
 from app.utils.tool_pages import (
     delete_pdf_reader_file,
     get_pdf_reader_file_path,
@@ -77,17 +78,32 @@ async def notes_submit(request: Request):
 
 
 @router.get("/pdf-reader", name="pdf_reader")
+@router.get("/bons", name="bons_space")
 async def pdf_reader(request: Request):
     if not get_current_user(request):
         return RedirectResponse("/login", status_code=303)
-    files = list_pdf_reader_files()
-    selected = str(request.query_params.get("file", "") or "").strip()
-    if selected and selected not in files:
-        selected = ""
-    return templates.TemplateResponse("pdf_reader.html", template_context(request, files=files, selected=selected))
+    q = str(request.query_params.get("q", "") or "").strip()
+    kind = str(request.query_params.get("kind", "") or "").strip()
+    selected_key = str(request.query_params.get("doc", "") or "").strip()
+    legacy_file = str(request.query_params.get("file", "") or "").strip()
+    if legacy_file and not selected_key:
+        selected_key = f"pdf:{legacy_file}"
+    documents = list_bon_space_documents(q=q, kind=kind)
+    selected = find_bon_space_document(documents, selected_key)
+    return templates.TemplateResponse(
+        "pdf_reader.html",
+        template_context(
+            request,
+            files=list_pdf_reader_files(),
+            documents=documents,
+            selected_doc=selected,
+            filters={"q": q, "kind": kind},
+        ),
+    )
 
 
 @router.post("/pdf-reader", name="pdf_reader")
+@router.post("/bons", name="bons_space")
 async def pdf_reader_submit(request: Request):
     if not get_current_user(request):
         return RedirectResponse("/login", status_code=303)
@@ -100,21 +116,22 @@ async def pdf_reader_submit(request: Request):
             flash(request, f"PDF supprime : {filename}", "success")
         else:
             flash(request, "Fichier introuvable.", "warning")
-        return RedirectResponse("/pdf-reader", status_code=303)
+        return RedirectResponse("/bons", status_code=303)
     uploaded = form.get("pdf_file")
     if not uploaded or not getattr(uploaded, "filename", ""):
         flash(request, "Choisis un fichier PDF.", "warning")
-        return RedirectResponse("/pdf-reader", status_code=303)
+        return RedirectResponse("/bons", status_code=303)
     try:
         filename = save_pdf_reader_upload(uploaded)
     except ValueError as exc:
         flash(request, str(exc), "danger" if "acceptes" in str(exc) else "warning")
-        return RedirectResponse("/pdf-reader", status_code=303)
+        return RedirectResponse("/bons", status_code=303)
     flash(request, f"PDF ajoute : {filename}", "success")
-    return RedirectResponse(f"/pdf-reader?file={filename}", status_code=303)
+    return RedirectResponse(f"/bons?doc=pdf:{filename}", status_code=303)
 
 
 @router.get("/pdf-reader/file/{filename:path}", name="pdf_reader_file")
+@router.get("/bons/file/{filename:path}", name="bons_pdf_file")
 async def pdf_reader_file(request: Request, filename: str):
     if not get_current_user(request):
         return RedirectResponse("/login", status_code=303)

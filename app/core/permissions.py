@@ -144,6 +144,8 @@ ENDPOINT_PERMISSIONS: dict[str, dict[str, str]] = {
     "new_production": {"GET": PERMISSION_PRODUCTION_WRITE, "POST": PERMISSION_PRODUCTION_WRITE},
     "delete_production": {"POST": PERMISSION_PRODUCTION_DELETE},
     "notes_page": {"*": PERMISSION_TOOLS_READ},
+    "bons_space": {"*": PERMISSION_TOOLS_READ},
+    "bons_pdf_file": {"*": PERMISSION_TOOLS_READ},
     "pdf_reader": {"*": PERMISSION_TOOLS_READ},
     "pdf_reader_file": {"*": PERMISSION_TOOLS_READ},
     "mobile_connect": {"*": PERMISSION_DASHBOARD_READ},

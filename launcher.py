@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "FABOuanes"
+SERVER_MODE_ARGS = {"--server", "--server-only", "--network-server"}
+LAUNCH_ARGS = {arg.strip().lower() for arg in sys.argv[1:] if arg.strip()}
 try:
     from app.version import VERSION_LABEL as APP_VERSION
 except Exception:
@@ -35,11 +37,9 @@ SPLASH_LOGO_PATH = STATIC_DIR / "desktop_logo_shield.png"
 os.chdir(BASE_DIR)
 os.environ["FAB_BASE_DIR"] = str(BASE_DIR)
 os.environ["FAB_DATA_DIR"] = str(DATA_DIR)
-os.environ["FAB_DESKTOP"] = "1"
-# The Windows desktop build is always local-first. Ignore stale DATABASE_URL
-# values from AppData/.env so a previous PostgreSQL/SaaS config cannot break
-# a local launch.
-os.environ["DATABASE_URL"] = ""
+os.environ["FAB_DESKTOP"] = "0" if LAUNCH_ARGS & SERVER_MODE_ARGS else "1"
+# Network and desktop launches keep DATABASE_URL intact so every client uses
+# the same PostgreSQL server by default.
 
 SRC_DB_PATH = BASE_DIR / "database.db"
 DST_DB_PATH = DATA_DIR / "database.db"
@@ -335,7 +335,7 @@ def open_ui(url: str) -> None:
 
 
 def main() -> None:
-    args = {arg.strip().lower() for arg in sys.argv[1:] if arg.strip()}
+    args = LAUNCH_ARGS
     if "--bootstrap-only" in args:
         try:
             reason = "installer_post_install" if "--post-install" in args else "bootstrap_only"
@@ -346,6 +346,22 @@ def main() -> None:
             write_bootstrap_log(f"Bootstrap echec: {exc}")
             print(f"Bootstrap failed: {exc}")
             sys.exit(1)
+
+    if args & SERVER_MODE_ARGS:
+        host = get_bind_host()
+        start_port = int(os.environ.get("FAB_PORT", "5000") or "5000")
+        port = find_port(start_port, host)
+        os.environ["FAB_HOST"] = host
+        os.environ["FAB_PORT"] = str(port)
+        lan_ip = get_local_ip() if host == "0.0.0.0" else host
+        if host == "0.0.0.0":
+            os.environ["FAB_LAN_IP"] = lan_ip
+        print(f"{APP_NAME} demarre en mode serveur reseau.")
+        print(f"Dossier de donnees: {DATA_DIR}")
+        print(f"Acces local : http://127.0.0.1:{port}")
+        print(f"Acces reseau : http://{lan_ip}:{port}")
+        run_server(host, port)
+        return
 
     bootstrap_desktop_install(reason="desktop_launch")
     host = get_bind_host()

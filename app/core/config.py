@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 APP_NAME = "FABOuanes"
 BASE_DIR = Path(__file__).resolve().parents[2]
+LOCAL_POSTGRESQL_URL = "postgresql://postgres:0000@127.0.0.1:5432/fabouanes"
 
 
 def _default_data_dir() -> Path:
@@ -52,10 +53,16 @@ class Settings:
 
     @property
     def database_url(self) -> str:
-        """Use local SQLite when DATABASE_URL is empty; use PostgreSQL when it is set."""
+        """Use PostgreSQL by default; keep SQLite available as an explicit fallback."""
         configured = os.getenv("DATABASE_URL", "").strip()
         if configured:
             return configured
+        if os.getenv("FAB_DATABASE_ENGINE", "").strip().lower() == "sqlite":
+            return self.sqlite_database_url
+        return os.getenv("FAB_DEFAULT_DATABASE_URL", LOCAL_POSTGRESQL_URL).strip() or LOCAL_POSTGRESQL_URL
+
+    @property
+    def sqlite_database_url(self) -> str:
         db_path = self.app_data_dir / "database.db"
         return f"sqlite:///{db_path}"
 
@@ -66,7 +73,8 @@ class Settings:
 
 settings = Settings()
 
-DATABASE_URL = "" if os.getenv("FAB_DESKTOP", "0").strip() == "1" else os.getenv("DATABASE_URL", "").strip()
+DATABASE_URL = settings.database_url
+SQLITE_DATABASE_URL = settings.sqlite_database_url
 SESSION_COOKIE_SECURE = settings.session_cookie_secure
 DEFAULT_ADMIN_USERNAME = settings.default_admin_username
 DEFAULT_ADMIN_PASSWORD = settings.default_admin_password

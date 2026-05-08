@@ -4,6 +4,7 @@ cd /d %~dp0
 echo.
 echo  Demarrage de FABOuanes en mode reseau...
 echo  Le serveur sera accessible depuis le telephone Android sur le meme Wi-Fi.
+echo  PostgreSQL local est utilise par defaut.
 echo.
 
 set "PY_CMD="
@@ -30,5 +31,5 @@ if errorlevel 1 (
 )
 
 set FAB_HOST=0.0.0.0
-%PY_CMD% launcher.py
+%PY_CMD% launcher.py --server
 pause

@@ -61,6 +61,8 @@ COMPAT_ROUTE_MAP = {
     "delete_payment": "/operations/payments/{payment_id}/delete",
     "print_document": "/print/{doc_type}/{item_id}",
     "notes_page": "/notes",
+    "bons_space": "/bons",
+    "bons_pdf_file": "/bons/file/{filename}",
     "pdf_reader": "/pdf-reader",
     "pdf_reader_file": "/pdf-reader/file/{filename}",
     "edit_production_notes": "/production/notes",

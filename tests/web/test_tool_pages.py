@@ -25,7 +25,14 @@ def test_notes_page_can_save_content(logged_client):
 def test_pdf_reader_page_renders(logged_client):
     response = logged_client.get("/pdf-reader")
     assert response.status_code == 200
-    assert "Lecteur PDF" in response.text
+    assert "Espace bons" in response.text
+    assert "Achats" in response.text
+
+
+def test_bons_space_alias_renders(logged_client):
+    response = logged_client.get("/bons")
+    assert response.status_code == 200
+    assert "Historique client" in response.text
 
 
 def test_service_worker_route_serves_javascript(client):

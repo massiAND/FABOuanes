@@ -37,7 +37,7 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
 }
 </script>
 {% if g.user and not is_print_view %}
-{% set tools_nav_active = request.endpoint in ['notes_page', 'pdf_reader', 'pdf_reader_file', 'mobile_connect'] %}
+{% set tools_nav_active = request.endpoint in ['notes_page', 'bons_space', 'bons_pdf_file', 'pdf_reader', 'pdf_reader_file', 'mobile_connect'] %}
 {% set contacts_nav_active = request.endpoint in ['contacts','clients','new_client','client_detail','edit_client','import_clients_excel','print_client_history','suppliers','new_supplier','supplier_detail','edit_supplier'] %}
 {% set operations_nav_active = request.endpoint in ['operations','transactions','sales','new_sale','edit_sale','edit_sale_document','purchases','new_purchase','edit_purchase','edit_purchase_document','payments','new_payment','edit_payment'] %}
 <!-- -- Top Navbar -- -->
@@ -63,7 +63,7 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
         </button>
         <ul class="dropdown-menu">
           <li><a class="dropdown-item {{ 'active' if request.endpoint == 'notes_page' else '' }}" href="{{ url_for('notes_page') }}"><i class="bi bi-journal-text me-2"></i>Bloc-note</a></li>
-          <li><a class="dropdown-item {{ 'active' if request.endpoint in ['pdf_reader','pdf_reader_file'] else '' }}" href="{{ url_for('pdf_reader') }}"><i class="bi bi-file-pdf me-2"></i>Lecteur PDF</a></li>
+          <li><a class="dropdown-item {{ 'active' if request.endpoint in ['bons_space','bons_pdf_file','pdf_reader','pdf_reader_file'] else '' }}" href="{{ url_for('bons_space') }}"><i class="bi bi-receipt me-2"></i>Espace bons</a></li>
           <li><a class="dropdown-item {{ 'active' if request.endpoint == 'mobile_connect' else '' }}" href="{{ url_for('mobile_connect') }}"><i class="bi bi-qr-code me-2"></i>Connexion mobile</a></li>
         </ul>
       </div>
@@ -159,8 +159,8 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
         <a href="{{ url_for('notes_page') }}" class="drawer-sublink {{ 'active' if request.endpoint == 'notes_page' else '' }}">
           <i class="bi bi-journal-text"></i> Bloc-note
         </a>
-        <a href="{{ url_for('pdf_reader') }}" class="drawer-sublink {{ 'active' if request.endpoint in ['pdf_reader','pdf_reader_file'] else '' }}">
-          <i class="bi bi-file-pdf"></i> Lecteur PDF
+        <a href="{{ url_for('bons_space') }}" class="drawer-sublink {{ 'active' if request.endpoint in ['bons_space','bons_pdf_file','pdf_reader','pdf_reader_file'] else '' }}">
+          <i class="bi bi-receipt"></i> Espace bons
         </a>
         <a href="{{ url_for('mobile_connect') }}" class="drawer-sublink {{ 'active' if request.endpoint == 'mobile_connect' else '' }}">
           <i class="bi bi-qr-code"></i> Connexion mobile

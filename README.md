@@ -52,19 +52,29 @@ python -m pip install -r requirements.txt
 Copier `.env.example` en `.env` si besoin, puis ajuster:
 
 - `SECRET_KEY`
-- `DATABASE_URL` pour PostgreSQL
+- `DATABASE_URL` pour PostgreSQL local
 - `FAB_HOST`
 - `FAB_PORT`
 - `DEFAULT_ADMIN_USERNAME`
 - `DEFAULT_ADMIN_PASSWORD`
 
-La configuration recommandee utilise PostgreSQL:
+La configuration par defaut utilise PostgreSQL local:
 
 ```env
 DATABASE_URL=postgresql://postgres:0000@127.0.0.1:5432/fabouanes
 ```
 
-SQLite reste seulement un fallback local si `DATABASE_URL` est vide.
+Si `DATABASE_URL` est absent, l'application utilise aussi ce PostgreSQL local par defaut. SQLite reste reserve au fallback explicite:
+
+```env
+FAB_DATABASE_ENGINE=sqlite
+```
+
+ou avec une URL SQLite complete:
+
+```env
+DATABASE_URL=sqlite:///C:/Users/you/AppData/Local/FABOuanes/database.db
+```
 
 ## Lancer le serveur FastAPI
 
@@ -80,6 +90,14 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 python -m launcher.run_server
 ```
 
+Le serveur ecoute par defaut sur `0.0.0.0:5000` pour le mode reseau.
+
+Depuis Windows, `LANCER.bat` lance aussi ce mode serveur reseau par defaut. La commande equivalente est:
+
+```powershell
+python launcher.py --server
+```
+
 ## Lancer le client desktop
 
 ```powershell
@@ -89,10 +107,23 @@ python launcher.py
 Le lanceur:
 
 - prepare les dossiers runtime,
-- initialise/migre la base locale,
-- demarre Uvicorn localement,
+- initialise/migre la base PostgreSQL par defaut,
+- demarre Uvicorn en mode reseau,
 - ouvre l'UI dans WebView,
 - conserve la compatibilite avec le QR mobile.
+
+Le client desktop reste disponible avec `python launcher.py`; il ouvre la WebView locale mais garde l'acces reseau actif.
+
+## Espace bons
+
+Le menu `Outils > Espace bons` remplace l'ancien lecteur PDF. Il permet de chercher et lire:
+
+- les bons d'achat,
+- les bons de vente,
+- les bons de versement et d'avance,
+- les bons de production,
+- les historiques client,
+- les PDF externes importes manuellement.
 
 ## Tests
 
