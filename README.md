@@ -52,13 +52,19 @@ python -m pip install -r requirements.txt
 Copier `.env.example` en `.env` si besoin, puis ajuster:
 
 - `SECRET_KEY`
-- `DATABASE_URL` si PostgreSQL est utilise
+- `DATABASE_URL` pour PostgreSQL
 - `FAB_HOST`
 - `FAB_PORT`
 - `DEFAULT_ADMIN_USERNAME`
 - `DEFAULT_ADMIN_PASSWORD`
 
-Par defaut, l'application utilise la base locale sous `%LOCALAPPDATA%\FABOuanes` ou le dossier `FAB_DATA_DIR`.
+La configuration recommandee utilise PostgreSQL:
+
+```env
+DATABASE_URL=postgresql://postgres:0000@127.0.0.1:5432/fabouanes
+```
+
+SQLite reste seulement un fallback local si `DATABASE_URL` est vide.
 
 ## Lancer le serveur FastAPI
 

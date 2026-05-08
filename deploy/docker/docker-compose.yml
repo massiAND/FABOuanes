@@ -4,9 +4,9 @@ services:
     container_name: fabouanes_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: fabouanes
-      POSTGRES_USER: fabouanes
-      POSTGRES_PASSWORD: fabouanes_change_me
+      POSTGRES_DB: ${POSTGRES_DB:-fabouanes}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-0000}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -21,7 +21,7 @@ services:
     depends_on:
       - postgres
     environment:
-      DATABASE_URL: postgresql://fabouanes:fabouanes_change_me@postgres:5432/fabouanes
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-0000}@postgres:5432/${POSTGRES_DB:-fabouanes}
       SECRET_KEY: change_me_in_production
       SESSION_COOKIE_SECURE: "0"
       DEFAULT_ADMIN_USERNAME: admin
