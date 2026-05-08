@@ -4,7 +4,7 @@ from __future__ import annotations
 from alembic import op
 
 
-revision = "0002_performance_reliability_indexes"
+revision = "0002_perf_indexes"
 down_revision = "0001_baseline"
 branch_labels = None
 depends_on = None
