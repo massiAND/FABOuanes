@@ -128,7 +128,15 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 python -m launcher.run_server
 ```
 
-Le serveur ecoute par defaut sur `0.0.0.0:5000` pour le mode reseau.
+Le serveur ecoute par defaut sur `0.0.0.0:5000` pour le mode reseau. `0.0.0.0` est l'adresse d'ecoute du serveur, pas l'URL a ouvrir dans le navigateur.
+
+URLs a utiliser:
+
+- sur la machine serveur: `http://127.0.0.1:5000`
+- sur une machine cliente du meme reseau: `http://IP_DU_SERVEUR:5000` par exemple `http://192.168.1.32:5000`
+- dans les logs techniques: `0.0.0.0:5000` signifie seulement que le serveur accepte les connexions reseau
+
+La fenetre console doit rester ouverte en mode serveur. Utiliser `Ctrl+C` pour arreter le serveur.
 Le runtime in-process actuel impose `WEB_CONCURRENCY=1`: le cache et le scheduler de sauvegarde ne doivent pas tourner avec plusieurs workers sans cache/scheduler externe.
 
 Depuis Windows, `LANCER.bat` lance aussi ce mode serveur reseau par defaut. La commande equivalente est:

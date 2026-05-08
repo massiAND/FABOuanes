@@ -162,6 +162,24 @@ def find_port(start: int = 5000, host: str | None = None) -> int:
     raise RuntimeError(f"Aucun port disponible entre {start} et {start + 999}.")
 
 
+def server_access_lines(host: str, port: int, lan_ip: str | None = None) -> list[str]:
+    client_host = lan_ip or (get_local_ip() if host == "0.0.0.0" else host)
+    lines = [
+        f"Localhost / cette machine : http://127.0.0.1:{port}",
+        f"Machine client du reseau : http://{client_host}:{port}",
+        f"Mode serveur / ecoute : {host}:{port}",
+    ]
+    if host == "0.0.0.0":
+        lines.append("Note: 0.0.0.0 accepte les connexions reseau, mais ne s'ouvre pas dans le navigateur.")
+    return lines
+
+
+def print_server_access(host: str, port: int, lan_ip: str | None = None) -> None:
+    print("Acces disponibles:", flush=True)
+    for line in server_access_lines(host, port, lan_ip):
+        print(f" - {line}", flush=True)
+
+
 def run_server(host: str, port: int) -> None:
     import uvicorn
 
@@ -177,8 +195,11 @@ def run_server(host: str, port: int) -> None:
     bootstrap_and_migrate()
     log_server_start()
     if server_mode:
-        print("Base OK. Le serveur reste ouvert dans cette fenetre; Ctrl+C pour l'arreter.", flush=True)
-    log_level = os.environ.get("FAB_UVICORN_LOG_LEVEL") or ("info" if server_mode else "warning")
+        lan_ip = os.environ.get("FAB_LAN_IP") or (get_local_ip() if host == "0.0.0.0" else host)
+        print("Base OK.", flush=True)
+        print_server_access(host, port, lan_ip)
+        print("La fenetre reste ouverte: c'est le mode serveur. Ctrl+C pour l'arreter.", flush=True)
+    log_level = os.environ.get("FAB_UVICORN_LOG_LEVEL") or "warning"
     config = uvicorn.Config(
         "app.main:app",
         host=host,
@@ -372,8 +393,6 @@ def main() -> None:
             os.environ["FAB_LAN_IP"] = lan_ip
         print(f"{APP_NAME} demarre en mode serveur reseau.", flush=True)
         print(f"Dossier de donnees: {DATA_DIR}", flush=True)
-        print(f"Acces local : http://127.0.0.1:{port}", flush=True)
-        print(f"Acces reseau : http://{lan_ip}:{port}", flush=True)
         run_server(host, port)
         return
 
