@@ -61,6 +61,14 @@ def test_pool_status_reports_sqlite_in_sqlite_mode():
     assert postgres_pool_status()["engine"] == "sqlite"
 
 
+def test_application_logger_does_not_duplicate_to_root():
+    from app.core.logging import configure_logging
+
+    logger = configure_logging()
+
+    assert logger.propagate is False
+
+
 def test_bootstrap_and_migrate_runs_once_per_process(monkeypatch):
     import app.core.database as database
 

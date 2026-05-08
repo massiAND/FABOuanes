@@ -179,7 +179,15 @@ def run_server(host: str, port: int) -> None:
     if server_mode:
         print("Base OK. Le serveur reste ouvert dans cette fenetre; Ctrl+C pour l'arreter.", flush=True)
     log_level = os.environ.get("FAB_UVICORN_LOG_LEVEL") or ("info" if server_mode else "warning")
-    config = uvicorn.Config("app.main:app", host=host, port=port, reload=False, log_level=log_level, access_log=False)
+    config = uvicorn.Config(
+        "app.main:app",
+        host=host,
+        port=port,
+        reload=False,
+        log_level=log_level,
+        access_log=False,
+        use_colors=False,
+    )
     server = uvicorn.Server(config)
     server.run()
 
