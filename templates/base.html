@@ -22,7 +22,7 @@
   <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"></noscript>
   <link href="{{ url_for('static', filename='css/tokens.css', v='20260501-black-actions') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/components.css', v='20260501-black-actions') }}" rel="stylesheet">
-  <link href="{{ url_for('static', filename='app.css', v='20260508-nav-font-fix') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='app.css', v='20260508-nav-hide-perf') }}" rel="stylesheet">
 </head>
 {% set is_print_view = request.path.startswith('/print/') or request.endpoint in ['print_client_history'] %}
 <body class="{% if is_desktop_app %}desktop-app {% endif %}{% if is_print_view %}print-route{% endif %}">
@@ -114,6 +114,9 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
     </div>
   </div>
 </nav>
+<button type="button" class="side-nav-toggle" id="sideNavToggle" aria-label="Masquer la barre verticale" hidden>
+  <i class="bi bi-chevron-left"></i>
+</button>
 
 <!-- -- Mobile Side Drawer -- -->
 <div class="nav-overlay" id="navOverlay"></div>
@@ -267,7 +270,7 @@ if (document.body.classList.contains('desktop-app') && !document.body.classList.
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/api.js', v='20260501-black-actions') }}"></script>
 <script src="{{ url_for('static', filename='js/forms.js', v='20260501-black-actions') }}"></script>
-<script src="{{ url_for('static', filename='js/theme.js', v='20260508-nav-font-fix') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js', v='20260508-nav-hide-perf') }}"></script>
 <script src="{{ url_for('static', filename='js/layout.js', v='20260501-black-actions') }}"></script>
 <script src="{{ url_for('static', filename='js/tables.js', v='20260508-sort-tie-fix') }}"></script>
 <script src="{{ url_for('static', filename='js/notifications.js', v='20260501-black-actions') }}"></script>

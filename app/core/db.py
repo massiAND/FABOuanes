@@ -17,6 +17,36 @@ except Exception:
     pg_dbapi = None
 
 
+def _env_int(name: str, default: int, minimum: int = 0, maximum: int | None = None) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)) or default)
+    except Exception:
+        value = default
+    value = max(minimum, value)
+    if maximum is not None:
+        value = min(maximum, value)
+    return value
+
+
+def _sqlite_pragmas() -> tuple[str, ...]:
+    busy_timeout = _env_int("FAB_SQLITE_BUSY_TIMEOUT_MS", 15000, 1000, 60000)
+    cache_kib = _env_int("FAB_SQLITE_CACHE_KIB", 131072, 8192, 1048576)
+    mmap_size = _env_int("FAB_SQLITE_MMAP_BYTES", 536870912, 0, 2147483647)
+    wal_autocheckpoint = _env_int("FAB_SQLITE_WAL_AUTOCHECKPOINT", 2000, 100, 10000)
+    return (
+        "PRAGMA foreign_keys = ON",
+        f"PRAGMA busy_timeout = {busy_timeout}",
+        "PRAGMA journal_mode = WAL",
+        "PRAGMA synchronous = NORMAL",
+        "PRAGMA temp_store = MEMORY",
+        f"PRAGMA cache_size = -{cache_kib}",
+        f"PRAGMA mmap_size = {mmap_size}",
+        f"PRAGMA wal_autocheckpoint = {wal_autocheckpoint}",
+        "PRAGMA analysis_limit = 1000",
+        "PRAGMA optimize",
+    )
+
+
 class CompatRow(dict):
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -59,18 +89,10 @@ class CompatConnection:
         self._closed = False
         if dialect == "sqlite":
             self.conn.row_factory = sqlite3.Row
-            for pragma in (
-                "PRAGMA foreign_keys = ON",
-                "PRAGMA busy_timeout = 5000",
-                "PRAGMA journal_mode = WAL",
-                "PRAGMA synchronous = NORMAL",
-                "PRAGMA temp_store = MEMORY",
-                "PRAGMA cache_size = -50000",
-                "PRAGMA mmap_size = 268435456",
-                "PRAGMA wal_autocheckpoint = 1000",
-            ):
+            for pragma in _sqlite_pragmas():
                 try:
-                    self.conn.execute(pragma)
+                    cur = self.conn.execute(pragma)
+                    cur.close()
                 except sqlite3.DatabaseError:
                     pass
 
@@ -199,7 +221,8 @@ def connect_database(database_url: str = "", sqlite_path: str | Path | None = No
         return CompatConnection(pg_conn, "postgres", on_close=release)
     resolved_sqlite_path = _sqlite_path_from_url(database_url, sqlite_path)
     Path(resolved_sqlite_path).parent.mkdir(parents=True, exist_ok=True)
-    return CompatConnection(sqlite3.connect(str(resolved_sqlite_path), timeout=30), "sqlite")
+    cached_statements = _env_int("FAB_SQLITE_CACHED_STATEMENTS", 512, 64, 4096)
+    return CompatConnection(sqlite3.connect(str(resolved_sqlite_path), timeout=30, cached_statements=cached_statements), "sqlite")
 
 
 def adapt_query(query: str, dialect: str) -> str:

@@ -44,6 +44,25 @@
     const name=navLayouts[layout]?layout:'horizontal';
     document.documentElement.setAttribute('data-nav',name);
     markSelected('.js-nav-layout','navLayout',name);
+    updateSideNavToggle();
+  }
+  function navHidden(){
+    return document.documentElement.getAttribute('data-nav-hidden')==='1';
+  }
+  function applyNavHidden(hidden){
+    const value=hidden?'1':'0';
+    document.documentElement.setAttribute('data-nav-hidden',value);
+    localStorage.setItem('fab_nav_hidden',value);
+    updateSideNavToggle();
+  }
+  function updateSideNavToggle(){
+    const button=document.getElementById('sideNavToggle');
+    if(!button) return;
+    const vertical=document.documentElement.getAttribute('data-nav')==='vertical';
+    const hidden=navHidden();
+    button.hidden=!vertical;
+    button.setAttribute('aria-label',hidden?'Afficher la barre verticale':'Masquer la barre verticale');
+    button.innerHTML=hidden?'<i class="bi bi-chevron-right"></i>':'<i class="bi bi-chevron-left"></i>';
   }
   try{
     const params=new URLSearchParams(window.location.search);
@@ -52,6 +71,7 @@
   }catch(e){}
   applyTheme(localStorage.getItem('fab_theme')||'light');
   applyFont(localStorage.getItem('fab_font')||'system');
+  applyNavHidden(localStorage.getItem('fab_nav_hidden')==='1');
   applyNavLayout(localStorage.getItem('fab_nav_layout')||'horizontal');
   document.querySelectorAll('.js-theme').forEach(function(button){
     button.addEventListener('click',function(){
@@ -74,4 +94,10 @@
       localStorage.setItem('fab_nav_layout',layout);
     });
   });
+  const sideNavToggle=document.getElementById('sideNavToggle');
+  if(sideNavToggle){
+    sideNavToggle.addEventListener('click',function(){
+      applyNavHidden(!navHidden());
+    });
+  }
 })();

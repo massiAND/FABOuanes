@@ -161,9 +161,10 @@
     .nav-hamburger{display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
       color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-size:1.1rem;transition:all .2s ease;}
     .nav-hamburger:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+    .side-nav-toggle{display:none;}
     @media(min-width:768px){
       html[data-nav="vertical"] body:not(.auth-page):not(.print-route){padding-top:0;padding-left:var(--side-nav-w);}
-      html[data-nav="vertical"] .app-navbar{right:auto;bottom:0;width:var(--side-nav-w);height:100vh;border-bottom:0;border-right:1px solid rgba(255,255,255,.08);}
+      html[data-nav="vertical"] .app-navbar{right:auto;bottom:0;width:var(--side-nav-w);height:100vh;border-bottom:0;border-right:1px solid rgba(255,255,255,.08);transition:transform .2s ease;}
       html[data-nav="vertical"] .nav-inner{height:100%;width:100%;max-width:none;margin:0;flex-direction:column;align-items:stretch;padding:14px 12px;gap:10px;}
       html[data-nav="vertical"] .nav-brand{justify-content:flex-start;padding:4px 4px 8px;}
       html[data-nav="vertical"] .nav-brand-text{display:flex!important;}
@@ -187,6 +188,12 @@
       html[data-nav="vertical"] .nav-actions .dropdown-menu{left:calc(100% + 8px)!important;right:auto!important;top:auto!important;}
       html[data-nav="vertical"] .nav-hamburger{display:none!important;}
       html[data-nav="vertical"] .bot-nav{display:none!important;}
+      html[data-nav="vertical"] .side-nav-toggle{display:flex;position:fixed;left:calc(var(--side-nav-w) - 18px);top:14px;z-index:1045;width:36px;height:36px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:#1d4ed8;color:#fff;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(15,23,42,.28);cursor:pointer;transition:left .2s ease,background .15s ease,transform .15s ease;}
+      html[data-nav="vertical"] .side-nav-toggle:hover{background:#2563eb;transform:translateY(-1px);}
+      html[data-nav="vertical"][data-nav-hidden="1"] body:not(.auth-page):not(.print-route){padding-left:0;}
+      html[data-nav="vertical"][data-nav-hidden="1"] .app-navbar{transform:translateX(calc(-1 * var(--side-nav-w)));pointer-events:none;}
+      html[data-nav="vertical"][data-nav-hidden="1"] .side-nav-toggle{left:10px;}
+      body.auth-page .side-nav-toggle,body.print-route .side-nav-toggle{display:none!important;}
     }
     @media(max-width:991px){
       .nav-links > a,.nav-links > .dropdown > .nav-link-menu{padding:8px 11px;font-size:.84rem;}

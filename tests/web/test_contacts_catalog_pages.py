@@ -8,6 +8,7 @@ def test_contacts_page_renders(logged_client):
     assert 'data-font="jakarta"' in response.text
     assert 'data-font="google"' not in response.text
     assert 'data-nav-layout="vertical"' in response.text
+    assert 'id="sideNavToggle"' in response.text
 
 
 def test_suppliers_page_renders(logged_client):

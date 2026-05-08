@@ -1,4 +1,4 @@
-const VERSION = "fabouanes-v28-nav-fonts";
+const VERSION = "fabouanes-v29-nav-hide-perf";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const OFFLINE_URL = "/static/offline.html";
