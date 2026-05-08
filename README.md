@@ -72,7 +72,34 @@ Exemple avec un utilisateur PostgreSQL dedie:
 DATABASE_URL=postgresql://fabouanes:mot_de_passe@127.0.0.1:5432/fabouanes
 ```
 
-Sur une nouvelle installation, installer PostgreSQL, creer la base `fabouanes`, copier `.env.example` en `.env`, puis adapter `DATABASE_URL` aux identifiants de la machine. L'application cree/migre les tables au premier demarrage.
+### PostgreSQL sur une nouvelle machine
+
+Sur une nouvelle installation, installer PostgreSQL, puis creer la base et l'utilisateur dedie:
+
+```sql
+CREATE USER fabouanes WITH PASSWORD 'mot_de_passe_a_choisir';
+CREATE DATABASE fabouanes OWNER fabouanes;
+GRANT ALL PRIVILEGES ON DATABASE fabouanes TO fabouanes;
+
+\c fabouanes
+
+GRANT ALL ON SCHEMA public TO fabouanes;
+ALTER SCHEMA public OWNER TO fabouanes;
+```
+
+Ensuite copier `.env.example` en `.env`, puis adapter `DATABASE_URL` avec le mot de passe choisi sur cette machine:
+
+```env
+DATABASE_URL=postgresql://fabouanes:mot_de_passe_a_choisir@127.0.0.1:5432/fabouanes
+```
+
+Si l'installation utilise l'utilisateur PostgreSQL `postgres` au lieu de l'utilisateur dedie, remplacer seulement l'utilisateur et le mot de passe:
+
+```env
+DATABASE_URL=postgresql://postgres:MOT_DE_PASSE_DU_POSTE@127.0.0.1:5432/fabouanes
+```
+
+Sur ce poste, l'exemple local est `postgres:0000`, mais sur une autre machine il faut mettre le mot de passe PostgreSQL de cette machine. L'application cree/migre les tables au premier demarrage.
 
 En mode serveur (`FAB_DESKTOP=0`), une `DATABASE_URL` manquante arrete le demarrage avec une erreur explicite. SQLite reste reserve au fallback desktop:
 
