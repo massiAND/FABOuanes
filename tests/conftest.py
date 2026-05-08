@@ -19,7 +19,7 @@ except Exception:  # pragma: no cover - optional integration dependency
 
 TEST_ROOT = Path(__file__).resolve().parent / "_runtime_fastapi"
 TEST_DATA_DIR = TEST_ROOT / "data"
-TEST_DB = os.environ.get("FAB_TEST_DB", "sqlite").strip().lower()
+TEST_DB = os.environ.get("FAB_TEST_DB", "postgres" if os.environ.get("CI") else "sqlite").strip().lower()
 USE_POSTGRES = TEST_DB in {"pg", "postgres", "postgresql"}
 PG_PORT = int(os.environ.get("FAB_TEST_PG_PORT", "55432"))
 PG_DB = os.environ.get("FAB_TEST_PG_DB", "fabouanes_test")
@@ -38,6 +38,7 @@ DATABASE_URL = (
 
 os.environ["FAB_DATA_DIR"] = str(TEST_DATA_DIR)
 os.environ["FAB_DISABLE_BACKGROUND_JOBS"] = "1"
+os.environ["FAB_DESKTOP"] = "0" if USE_POSTGRES else "1"
 os.environ["SECRET_KEY"] = "test-fastapi-secret"
 os.environ["FASTAPI_ENV"] = "test"
 os.environ["DATABASE_URL"] = DATABASE_URL

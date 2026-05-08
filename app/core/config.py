@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 APP_NAME = "FABOuanes"
 BASE_DIR = Path(__file__).resolve().parents[2]
-LOCAL_POSTGRESQL_URL = "postgresql://postgres:0000@127.0.0.1:5432/fabouanes"
 
 
 def _default_data_dir() -> Path:
@@ -53,13 +52,15 @@ class Settings:
 
     @property
     def database_url(self) -> str:
-        """Use PostgreSQL by default; keep SQLite available as an explicit fallback."""
+        """Require PostgreSQL in server mode; allow SQLite only as desktop fallback."""
         configured = os.getenv("DATABASE_URL", "").strip()
         if configured:
+            if configured.lower().startswith("sqlite") and not self.desktop_mode:
+                raise RuntimeError("DATABASE_URL SQLite est autorise uniquement avec FAB_DESKTOP=1.")
             return configured
-        if os.getenv("FAB_DATABASE_ENGINE", "").strip().lower() == "sqlite":
+        if self.desktop_mode:
             return self.sqlite_database_url
-        return os.getenv("FAB_DEFAULT_DATABASE_URL", LOCAL_POSTGRESQL_URL).strip() or LOCAL_POSTGRESQL_URL
+        raise RuntimeError("DATABASE_URL PostgreSQL est requis en mode serveur (FAB_DESKTOP=0).")
 
     @property
     def sqlite_database_url(self) -> str:
@@ -69,6 +70,28 @@ class Settings:
     @property
     def debug(self) -> bool:
         return self.env == "development"
+
+
+def configured_worker_count() -> int:
+    for name in ("FAB_WORKERS", "WEB_CONCURRENCY", "UVICORN_WORKERS", "GUNICORN_WORKERS"):
+        raw = os.getenv(name, "").strip()
+        if not raw:
+            continue
+        try:
+            return max(1, int(raw))
+        except ValueError:
+            continue
+    return 1
+
+
+def validate_single_worker_runtime() -> None:
+    workers = configured_worker_count()
+    allow = os.getenv("FAB_ALLOW_MULTI_WORKER", "0").strip().lower() in {"1", "true", "yes", "on"}
+    if workers > 1 and not allow:
+        raise RuntimeError(
+            "FABOuanes utilise un cache et un scheduler in-process: demarre 1 seul worker "
+            "ou configure un cache/scheduler externe avant FAB_ALLOW_MULTI_WORKER=1."
+        )
 
 
 settings = Settings()

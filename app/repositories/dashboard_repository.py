@@ -27,43 +27,7 @@ def _build_dashboard_snapshot(today: str) -> dict:
     target_day = date.fromisoformat(today)
     cutoff_30d = (target_day - timedelta(days=30)).isoformat()
     week_iso = (target_day - timedelta(days=7)).isoformat()
-
-    summary = query_db(
-        """
-        SELECT
-            COALESCE((SELECT SUM(total) FROM sales WHERE sale_date = ?), 0)
-            + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_date = ?), 0) AS sales_today,
-            COALESCE((SELECT SUM(total) FROM sales WHERE sale_date = ?), 0)
-            + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_date = ?), 0) AS sales_week_ago,
-            COALESCE((SELECT SUM(amount) FROM payments WHERE payment_date = ?), 0) AS cash_today,
-            COALESCE((SELECT SUM(opening_credit) FROM clients), 0)
-            + COALESCE((SELECT SUM(total) FROM sales WHERE sale_type = 'credit'), 0)
-            + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_type = 'credit'), 0)
-            - COALESCE((SELECT SUM(amount) FROM payments WHERE payment_type = 'versement'), 0)
-            + COALESCE((SELECT SUM(amount) FROM payments WHERE payment_type = 'avance'), 0) AS total_receivables,
-            COALESCE((SELECT SUM(profit_amount) FROM sales WHERE sale_date = ?), 0)
-            + COALESCE((SELECT SUM(profit_amount) FROM raw_sales WHERE sale_date = ?), 0) AS profit_today,
-            COALESCE((SELECT SUM(profit_amount) FROM sales), 0)
-            + COALESCE((SELECT SUM(profit_amount) FROM raw_sales), 0) AS total_profit,
-            COALESCE((SELECT SUM(total) FROM sales), 0)
-            + COALESCE((SELECT SUM(total) FROM raw_sales), 0) AS revenue,
-            COALESCE((SELECT SUM(quantity * cost_price_snapshot) FROM sales), 0)
-            + COALESCE((
-                SELECT SUM(
-                    (CASE
-                        WHEN lower(unit) = 'sac' THEN quantity * 50
-                        WHEN lower(unit) IN ('qt', 'quintal') THEN quantity * 100
-                        ELSE quantity
-                    END) * cost_price_snapshot
-                )
-                FROM raw_sales
-            ), 0) AS cost_of_goods,
-            COALESCE((SELECT SUM(profit_amount) FROM sales), 0)
-            + COALESCE((SELECT SUM(profit_amount) FROM raw_sales), 0) AS gross_profit
-        """,
-        (today, today, week_iso, week_iso, today, today, today),
-        one=True,
-    )
+    summary = {**_dashboard_daily_summary(today, week_iso), **_dashboard_cumulative_summary()}
 
     low_stock = query_db("SELECT * FROM raw_materials WHERE stock_qty <= alert_threshold ORDER BY stock_qty ASC")
     recent_sales = query_db(
@@ -74,13 +38,19 @@ def _build_dashboard_snapshot(today: str) -> dict:
             FROM sales s
             LEFT JOIN clients c ON c.id = s.client_id
             JOIN finished_products f ON f.id = s.finished_product_id
-            UNION ALL
+            ORDER BY s.sale_date DESC, s.id DESC
+            LIMIT 15
+        ) finished_recent
+        UNION ALL
+        SELECT * FROM (
             SELECT rs.sale_date, COALESCE(c.name, 'Comptoir') AS client_name, COALESCE(NULLIF(rs.custom_item_name, ''), r.name) AS item_name,
-                   rs.total, rs.balance_due, rs.profit_amount, 'Matière première' AS source
+                   rs.total, rs.balance_due, rs.profit_amount, 'Matiere premiere' AS source
             FROM raw_sales rs
             LEFT JOIN clients c ON c.id = rs.client_id
             JOIN raw_materials r ON r.id = rs.raw_material_id
-        ) x
+            ORDER BY rs.sale_date DESC, rs.id DESC
+            LIMIT 15
+        ) raw_recent
         ORDER BY sale_date DESC LIMIT 10
         """
     )
@@ -152,8 +122,8 @@ def _build_dashboard_snapshot(today: str) -> dict:
         stock_materials.append(row)
     stock_products = query_db("SELECT * FROM finished_products ORDER BY name LIMIT 10")
 
-    today_value = float(summary["sales_today"] if summary else 0.0)
-    week_value = float(summary["sales_week_ago"] if summary else 0.0)
+    today_value = float(summary["sales_today"])
+    week_value = float(summary["sales_week_ago"])
     sales_delta_pct = round((today_value - week_value) / week_value * 100, 1) if week_value > 0 else None
 
     debt_by_client = query_db(
@@ -224,6 +194,67 @@ def _build_dashboard_snapshot(today: str) -> dict:
         },
         "debt_by_client": debt_by_client,
         "production_history": production_history,
+    }
+
+
+def _dashboard_daily_summary(today: str, week_iso: str) -> dict[str, float]:
+    row = cached_result(
+        ("dashboard_daily_summary", today, week_iso),
+        lambda: query_db(
+            """
+            SELECT
+                COALESCE((SELECT SUM(total) FROM sales WHERE sale_date = ?), 0)
+                + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_date = ?), 0) AS sales_today,
+                COALESCE((SELECT SUM(total) FROM sales WHERE sale_date = ?), 0)
+                + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_date = ?), 0) AS sales_week_ago,
+                COALESCE((SELECT SUM(amount) FROM payments WHERE payment_date = ?), 0) AS cash_today,
+                COALESCE((SELECT SUM(profit_amount) FROM sales WHERE sale_date = ?), 0)
+                + COALESCE((SELECT SUM(profit_amount) FROM raw_sales WHERE sale_date = ?), 0) AS profit_today
+            """,
+            (today, today, week_iso, week_iso, today, today, today),
+            one=True,
+        ),
+        ttl_seconds=20.0,
+    )
+    return {key: float(row[key] if row else 0) for key in ("sales_today", "sales_week_ago", "cash_today", "profit_today")}
+
+
+def _dashboard_cumulative_summary() -> dict[str, float]:
+    row = cached_result(
+        ("dashboard_cumulative_summary",),
+        lambda: query_db(
+            """
+            SELECT
+                COALESCE((SELECT SUM(opening_credit) FROM clients), 0)
+                + COALESCE((SELECT SUM(total) FROM sales WHERE sale_type = 'credit'), 0)
+                + COALESCE((SELECT SUM(total) FROM raw_sales WHERE sale_type = 'credit'), 0)
+                - COALESCE((SELECT SUM(amount) FROM payments WHERE payment_type = 'versement'), 0)
+                + COALESCE((SELECT SUM(amount) FROM payments WHERE payment_type = 'avance'), 0) AS total_receivables,
+                COALESCE((SELECT SUM(profit_amount) FROM sales), 0)
+                + COALESCE((SELECT SUM(profit_amount) FROM raw_sales), 0) AS total_profit,
+                COALESCE((SELECT SUM(total) FROM sales), 0)
+                + COALESCE((SELECT SUM(total) FROM raw_sales), 0) AS revenue,
+                COALESCE((SELECT SUM(quantity * cost_price_snapshot) FROM sales), 0)
+                + COALESCE((
+                    SELECT SUM(
+                        (CASE
+                            WHEN lower(unit) = 'sac' THEN quantity * 50
+                            WHEN lower(unit) IN ('qt', 'quintal') THEN quantity * 100
+                            ELSE quantity
+                        END) * cost_price_snapshot
+                    )
+                    FROM raw_sales
+                ), 0) AS cost_of_goods,
+                COALESCE((SELECT SUM(profit_amount) FROM sales), 0)
+                + COALESCE((SELECT SUM(profit_amount) FROM raw_sales), 0) AS gross_profit
+            """,
+            one=True,
+        ),
+        ttl_seconds=300.0,
+    )
+    return {
+        key: float(row[key] if row else 0)
+        for key in ("total_receivables", "total_profit", "revenue", "cost_of_goods", "gross_profit")
     }
 
 

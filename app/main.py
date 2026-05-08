@@ -11,7 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.staticfiles import StaticFiles
 
 from app.api.router import router as api_router
-from app.core.config import settings
+from app.core.config import settings, validate_single_worker_runtime
 from app.core.database import bootstrap_and_migrate, create_request_connection
 from app.core.logging import configure_logging
 from app.core.request_state import push_request_state, reset_request_state, set_state_value
@@ -24,6 +24,7 @@ from app.web.router import router as web_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    validate_single_worker_runtime()
     ensure_runtime_dirs()
     configure_logging()
     bootstrap_and_migrate()

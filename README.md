@@ -52,22 +52,33 @@ python -m pip install -r requirements.txt
 Copier `.env.example` en `.env` si besoin, puis ajuster:
 
 - `SECRET_KEY`
-- `DATABASE_URL` pour PostgreSQL local
+- `DATABASE_URL` pour PostgreSQL local, avec les identifiants du poste
 - `FAB_HOST`
 - `FAB_PORT`
 - `DEFAULT_ADMIN_USERNAME`
 - `DEFAULT_ADMIN_PASSWORD`
 
-La configuration par defaut utilise PostgreSQL local:
+La configuration serveur exige PostgreSQL local. La valeur de `DATABASE_URL` n'est pas universelle: chaque poste doit utiliser l'utilisateur, le mot de passe, l'hote et le port PostgreSQL configures localement.
+
+Exemple pour ce poste:
 
 ```env
 DATABASE_URL=postgresql://postgres:0000@127.0.0.1:5432/fabouanes
 ```
 
-Si `DATABASE_URL` est absent, l'application utilise aussi ce PostgreSQL local par defaut. SQLite reste reserve au fallback explicite:
+Exemple avec un utilisateur PostgreSQL dedie:
 
 ```env
-FAB_DATABASE_ENGINE=sqlite
+DATABASE_URL=postgresql://fabouanes:mot_de_passe@127.0.0.1:5432/fabouanes
+```
+
+Sur une nouvelle installation, installer PostgreSQL, creer la base `fabouanes`, copier `.env.example` en `.env`, puis adapter `DATABASE_URL` aux identifiants de la machine. L'application cree/migre les tables au premier demarrage.
+
+En mode serveur (`FAB_DESKTOP=0`), une `DATABASE_URL` manquante arrete le demarrage avec une erreur explicite. SQLite reste reserve au fallback desktop:
+
+```env
+FAB_DESKTOP=1
+DATABASE_URL=
 ```
 
 ou avec une URL SQLite complete:
@@ -91,6 +102,7 @@ python -m launcher.run_server
 ```
 
 Le serveur ecoute par defaut sur `0.0.0.0:5000` pour le mode reseau.
+Le runtime in-process actuel impose `WEB_CONCURRENCY=1`: le cache et le scheduler de sauvegarde ne doivent pas tourner avec plusieurs workers sans cache/scheduler externe.
 
 Depuis Windows, `LANCER.bat` lance aussi ce mode serveur reseau par defaut. La commande equivalente est:
 
@@ -133,8 +145,8 @@ La nouvelle base de tests utilise `pytest`.
 python -m pytest
 ```
 
-Par defaut, les tests utilisent SQLite dans `tests/_runtime_fastapi`.
-Pour lancer les tests avec un cluster PostgreSQL local, definir `FAB_TEST_DB=postgres`.
+En CI, les tests utilisent PostgreSQL par defaut (`FAB_TEST_DB=postgres`) si `CI` est defini.
+En local hors CI, les tests rapides utilisent SQLite dans `tests/_runtime_fastapi`.
 
 Les tests FastAPI sont organises par domaine:
 
@@ -158,9 +170,11 @@ La migration preserve le schema existant.
 Au demarrage:
 
 1. les dossiers runtime sont assures,
-2. la base locale est copiee si necessaire,
+2. la base locale est copiee seulement pour le fallback SQLite desktop,
 3. le schema applicatif est bootstrappe,
-4. Alembic fait `stamp` puis `upgrade`.
+4. Alembic fait `stamp base` uniquement si `alembic_version` n'existe pas, puis `upgrade head`.
+
+Regle transactionnelle: toute operation metier multi-etapes doit etre enveloppee dans `db_transaction()` pour garantir un seul commit atomique sur PostgreSQL.
 
 ## Packaging Windows
 

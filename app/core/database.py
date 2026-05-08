@@ -4,30 +4,17 @@ import importlib
 import sys
 from pathlib import Path
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 from app.core.config import settings
 from app.core.runtime_paths import ensure_runtime_dirs
 from app.core.schema_bootstrap import bootstrap_schema
-from app.core.db import connect_database
-
-
-def sqlalchemy_database_url() -> str:
-    url = settings.database_url
-    # SQLite: convert sqlite:/// to sqlite:///
-    if url.startswith("sqlite://"):
-        return url
-    # PostgreSQL variants
-    if url.startswith("postgresql://"):
-        return "postgresql+pg8000://" + url[len("postgresql://") :]
-    if url.startswith("postgres://"):
-        return "postgresql+pg8000://" + url[len("postgres://") :]
-    return url
+from app.core.db import connect_database, get_database_engine, sqlalchemy_database_url
 
 
 def create_sqlalchemy_engine() -> Engine:
-    return create_engine(sqlalchemy_database_url(), future=True)
+    return get_database_engine(settings.database_url)
 
 
 engine = create_sqlalchemy_engine()
@@ -53,8 +40,15 @@ def _load_alembic():
 def _alembic_config():
     _, Config = _load_alembic()
     cfg = Config(str(settings.base_dir / "alembic.ini"))
-    cfg.set_main_option("sqlalchemy.url", sqlalchemy_database_url())
+    cfg.set_main_option("sqlalchemy.url", sqlalchemy_database_url(settings.database_url))
     return cfg
+
+
+def _alembic_version_exists() -> bool:
+    try:
+        return inspect(engine).has_table("alembic_version")
+    except Exception:
+        return False
 
 
 def run_alembic_upgrade() -> None:
@@ -62,7 +56,8 @@ def run_alembic_upgrade() -> None:
         return
     command, _ = _load_alembic()
     cfg = _alembic_config()
-    command.stamp(cfg, "base")
+    if not _alembic_version_exists():
+        command.stamp(cfg, "base")
     command.upgrade(cfg, "head")
 
 

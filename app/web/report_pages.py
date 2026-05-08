@@ -6,6 +6,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 from app.version import VERSION_LABEL
+from app.core.db import postgres_pool_status
 from app.core.runtime_paths import paths
 from app.services.bon_space_service import find_bon_space_document, list_bon_space_documents
 from app.utils.tool_pages import (
@@ -143,4 +144,4 @@ async def pdf_reader_file(request: Request, filename: str):
 
 @router.get("/health", name="health")
 async def health():
-    return JSONResponse({"ok": True, "service": "FABOuanes", "version": VERSION_LABEL})
+    return JSONResponse({"ok": True, "service": "FABOuanes", "version": VERSION_LABEL, "pool": postgres_pool_status()})

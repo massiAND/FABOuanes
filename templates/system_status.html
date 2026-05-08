@@ -57,6 +57,7 @@
         <tr><th>Dossier local</th><td class="text-break">{{ system_status.backups.local_dir }}</td></tr>
         <tr><th>Dossier logs</th><td class="text-break">{{ system_status.paths.log_dir }}</td></tr>
         <tr><th>Mode base</th><td>{{ system_status.database.engine }}</td></tr>
+        <tr><th>Pool PostgreSQL</th><td class="text-break">{{ system_status.database.pool }}</td></tr>
         <tr><th>Statut ecriture base</th><td>{{ system_status.database.write_status.status }} - {{ system_status.database.write_status.message }}</td></tr>
         <tr><th>Statut sauvegarde</th><td>{{ system_status.backups.write_status.status }} - {{ system_status.backups.write_status.message }}</td></tr>
         <tr><th>Derniere sauvegarde</th><td>{{ system_status.backups.latest_file or '-' }} {{ system_status.backups.latest_file_at }}</td></tr>

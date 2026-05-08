@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from app.core.config import APP_DATA_DIR, DATABASE_URL
-from app.core.db import connect_database
+from app.core.db import connect_database, postgres_pool_status
 from app.core.activity import write_text_log
 from app.core.db_access import execute_db, explain_query_plan, get_db, query_db
 from app.core.storage import DB_PATH, LOCAL_BACKUP_DIR, LOG_DIR, get_pending_backup_marker, list_restore_backups
@@ -69,6 +69,7 @@ def get_system_status() -> dict:
             "exists": db_path.exists() if not DATABASE_URL else True,
             "size_bytes": size_info.get("db_bytes", 0),
             "write_status": write_status,
+            "pool": postgres_pool_status(),
         },
         "backups": {
             "ok": bool(backups) or bool(latest_job) or not pending_marker,

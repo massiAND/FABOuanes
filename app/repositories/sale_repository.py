@@ -1,17 +1,11 @@
 from __future__ import annotations
 
 import json
-from time import monotonic
 
 from app.core.db_access import query_db
+from app.core.perf_cache import cached_result, invalidate_cache_domain
 from app.utils.pagination import decode_cursor, encode_cursor, keyset_pagination_context, paginated_rows, pagination_context, parse_pagination
 from app.core.search import fts_query, sqlite_fts_enabled
-
-
-_SELLABLE_ITEMS_CACHE = {
-    "expires_at": 0.0,
-    "data": None,
-}
 
 
 def _is_other_operation_item(name: str | None) -> bool:
@@ -19,8 +13,7 @@ def _is_other_operation_item(name: str | None) -> bool:
 
 
 def invalidate_sellable_items_cache() -> None:
-    _SELLABLE_ITEMS_CACHE["expires_at"] = 0.0
-    _SELLABLE_ITEMS_CACHE["data"] = None
+    invalidate_cache_domain("sales_sellable_items")
 
 
 def _load_sellable_items():
@@ -62,14 +55,7 @@ def _load_sellable_items():
 
 
 def build_sellable_items():
-    now = monotonic()
-    data = _SELLABLE_ITEMS_CACHE["data"]
-    if data is not None and now < float(_SELLABLE_ITEMS_CACHE["expires_at"] or 0):
-        return data
-    data = _load_sellable_items()
-    _SELLABLE_ITEMS_CACHE["data"] = data
-    _SELLABLE_ITEMS_CACHE["expires_at"] = now + 30.0
-    return data
+    return cached_result(("sales_sellable_items",), _load_sellable_items, ttl_seconds=30.0)
 
 
 def list_sales_page_context(args=None):

@@ -23,6 +23,7 @@ BACKGROUND_STATE = {
     "thread": None,
     "leader_conn": None,
 }
+BACKGROUND_LOCK = threading.RLock()
 BACKUP_CREATE_IN_WORKER = "__create_on_worker__"
 
 
@@ -274,14 +275,16 @@ def run_deferred_event_backup(*, force: bool = False, reason: str = "deferred_ev
 def _acquire_postgres_scheduler_lock():
     if not DATABASE_URL.lower().startswith("postgres"):
         return True
-    if BACKGROUND_STATE.get("leader_conn") is not None:
-        return True
+    with BACKGROUND_LOCK:
+        if BACKGROUND_STATE.get("leader_conn") is not None:
+            return True
     try:
         leader_conn = connect_database(DATABASE_URL, APP_DATA_DIR / "database.db")
         row = leader_conn.execute("SELECT pg_try_advisory_lock(?) AS locked", (SCHEDULER_LOCK_ID,)).fetchone()
         locked = bool(row["locked"] if hasattr(row, "keys") else row[0])
         if locked:
-            BACKGROUND_STATE["leader_conn"] = leader_conn
+            with BACKGROUND_LOCK:
+                BACKGROUND_STATE["leader_conn"] = leader_conn
             return True
         leader_conn.close()
     except Exception:
@@ -323,9 +326,6 @@ def trigger_nightly_snapshot_if_due() -> bool:
 def _background_loop(app) -> None:
     while True:
         try:
-            if DATABASE_URL.lower().startswith("postgres") and not _acquire_postgres_scheduler_lock():
-                time.sleep(45)
-                continue
             run_deferred_event_backup()
             run_pending_backup_jobs(limit=4)
             trigger_nightly_snapshot_if_due()
@@ -335,12 +335,26 @@ def _background_loop(app) -> None:
 
 
 def start_background_services(app=None) -> None:
-    if BACKGROUND_STATE["started"]:
-        return
-    testing = bool(getattr(app, "debug", False)) if app is not None else False
-    if testing or os.getenv("FAB_DISABLE_BACKGROUND_JOBS", "0") == "1":
-        return
-    BACKGROUND_STATE["started"] = True
-    thread = threading.Thread(target=_background_loop, args=(app,), name="fab-backup-scheduler", daemon=True)
-    BACKGROUND_STATE["thread"] = thread
-    thread.start()
+    with BACKGROUND_LOCK:
+        if BACKGROUND_STATE["started"]:
+            return
+        testing = bool(getattr(app, "debug", False)) if app is not None else False
+        if testing or os.getenv("FAB_DISABLE_BACKGROUND_JOBS", "0") == "1":
+            return
+        try:
+            from app.core.config import configured_worker_count
+
+            multi_worker = configured_worker_count() > 1
+        except Exception:
+            multi_worker = False
+        scheduler_owner = os.getenv("FAB_BACKUP_SCHEDULER", "").strip().lower() in {"1", "true", "yes", "on"}
+        if multi_worker and not scheduler_owner:
+            logger.warning("Backup scheduler disabled in multi-worker runtime; run one FAB_BACKUP_SCHEDULER=1 process.")
+            return
+        if DATABASE_URL.lower().startswith("postgres") and not _acquire_postgres_scheduler_lock():
+            logger.info("Backup scheduler skipped: PostgreSQL advisory lock is held by another process.")
+            return
+        BACKGROUND_STATE["started"] = True
+        thread = threading.Thread(target=_background_loop, args=(app,), name="fab-backup-scheduler", daemon=True)
+        BACKGROUND_STATE["thread"] = thread
+        thread.start()

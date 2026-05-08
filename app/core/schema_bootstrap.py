@@ -376,6 +376,7 @@ CREATE INDEX IF NOT EXISTS idx_purchases_document_id ON purchases(document_id, i
 CREATE INDEX IF NOT EXISTS idx_clients_name ON clients(name);
 CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name);
 CREATE INDEX IF NOT EXISTS idx_raw_materials_name ON raw_materials(name);
+CREATE INDEX IF NOT EXISTS idx_raw_materials_stock_alert ON raw_materials(stock_qty, alert_threshold);
 CREATE INDEX IF NOT EXISTS idx_finished_products_name ON finished_products(name);
 CREATE INDEX IF NOT EXISTS idx_purchase_documents_date_id ON purchase_documents(purchase_date, id);
 CREATE INDEX IF NOT EXISTS idx_sale_documents_date_id ON sale_documents(sale_date, id);
